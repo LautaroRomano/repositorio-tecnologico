@@ -40,7 +40,10 @@ func Migrate() {
 		&models.Post{},
 		&models.Comment{},
 		&models.PostLike{},
+		&models.PostFile{},
 		&models.Follow{},
+		&models.University{},
+		&models.Career{},
 	)
 	if err != nil {
 		log.Fatalf("Error en la migración: %v", err)

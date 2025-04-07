@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/LautaroRomano/repositorio-tecnologico/config"
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
 	"github.com/LautaroRomano/repositorio-tecnologico/routes"
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,13 @@ func main() {
 
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)
+	routes.PostRoutes(router)
+
+	// Inicializar Cloudinary
+	err = config.SetupCloudinary()
+	if err != nil {
+		log.Fatalf("Error configurando Cloudinary: %v", err)
+	}
 
 	// Aquí irán tus rutas (por ahora un ping)
 	router.GET("/ping", func(c *gin.Context) {

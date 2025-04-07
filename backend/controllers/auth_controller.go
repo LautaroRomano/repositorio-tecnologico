@@ -12,9 +12,11 @@ import (
 
 func Register(c *gin.Context) {
 	var req struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Username    string `json:"username"`
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		AccountName string `json:"account_name"`
+		Img         string `json:"img"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -23,8 +25,10 @@ func Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		Username: req.Username,
-		Email:    req.Email,
+		Username:    req.Username,
+		Email:       req.Email,
+		AccountName: req.AccountName,
+		Img:         req.Img,
 	}
 	if err := user.SetPassword(req.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al procesar la contraseña"})
@@ -41,6 +45,7 @@ func Register(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	var req struct {
+		Username string `json:"username"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -51,7 +56,15 @@ func Login(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	var err error
+
+	if req.Email != "" {
+		err = database.DB.Where("email = ?", req.Email).First(&user).Error
+	} else {
+		err = database.DB.Where("username = ?", req.Username).First(&user).Error
+	}
+
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email o contraseña inválidos"})
 		return
 	}

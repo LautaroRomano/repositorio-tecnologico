@@ -7,8 +7,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte(os.Getenv("JWT_SECRET"))
-
 type Claims struct {
 	UserID uint `json:"user_id"`
 	jwt.RegisteredClaims
@@ -23,5 +21,5 @@ func GenerateJWT(userID uint) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }

@@ -9,8 +9,8 @@ type Post struct {
 	CreatedAt    time.Time
 	Tags         []string `gorm:"type:text[]"`
 	TSV          string   `gorm:"type:tsvector"`
-	UniversityID *uint
-	CareerID     *uint
+	UniversityID uint     `gorm:"not null"`
+	CareerID     uint     `gorm:"not null"`
 
 	User     User      `gorm:"foreignKey:UserID"`
 	Comments []Comment `gorm:"foreignKey:PostID"`
@@ -33,4 +33,11 @@ type PostLike struct {
 
 	Post Post `gorm:"foreignKey:PostID"`
 	User User `gorm:"foreignKey:UserID"`
+}
+
+type PostFile struct {
+	FileID   uint   `gorm:"primaryKey"`
+	FileURL  string `gorm:"not null"`
+	FileType string `gorm:"not null"`
+	PostID   uint   `gorm:"not null"`
 }
