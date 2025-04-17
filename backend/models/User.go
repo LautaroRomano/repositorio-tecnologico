@@ -14,7 +14,14 @@ type User struct {
 	AccountName  string
 	Img          string
 	About        string
-	CreatedAt    time.Time
+	UniversityID uint       `gorm:"foreignKey:UniversityID"`
+	CareerID     uint       `gorm:"foreignKey:CareerID"`
+	University   University `gorm:"foreignKey:UniversityID"`
+	Career       Career     `gorm:"foreignKey:CareerID"`
+	Followers    []Follow   `gorm:"foreignKey:FollowedID"`
+	Following    []Follow   `gorm:"foreignKey:FollowerID"`
+
+	CreatedAt time.Time
 
 	Posts    []Post    `gorm:"foreignKey:UserID"`
 	Comments []Comment `gorm:"foreignKey:UserID"`
