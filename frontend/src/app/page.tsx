@@ -9,22 +9,37 @@ import { motion } from "framer-motion";
 import { Post } from "@/types/types";
 import PostSkeleton from "@/components/app/post-skeleton";
 import PostCard from "@/components/app/post-card";
+import { useAuth } from "@/hooks/useAuth";
+import axios from "axios";
 
 function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const router = useRouter();
+  const { requireAuth } = useAuth();
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
+        // setPosts(mockPosts);
 
-        // Simulating API delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const res = await axios.get("/api/posts", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
-        setPosts(mockPosts);
+        if (res.status !== 200) {
+          throw new Error("Error fetching posts");
+        }
+        const data = res.data;
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setPosts(data.posts);
         setError(false);
       } catch (err) {
         console.error("Error loading mock posts:", err);
@@ -37,6 +52,17 @@ function HomePage() {
 
     fetchPosts();
   }, []);
+
+  const handleCreatePost = () => {
+    requireAuth(() => router.push("/create-post"));
+  };
+
+  const handleLoadMore = () => {
+    requireAuth(() => {
+      // Lógica para cargar más publicaciones
+      toast.info("Cargando más publicaciones...");
+    });
+  };
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 sm:px-6">
@@ -76,7 +102,7 @@ function HomePage() {
             No hay publicaciones para mostrar
           </div>
           <Button
-            onClick={() => router.push("/create-post")}
+            onClick={handleCreatePost}
             className="bg-gradient-to-r from-blue-600 to-purple-600"
           >
             Crear la primera publicación
@@ -85,13 +111,14 @@ function HomePage() {
       ) : (
         <div>
           {posts.map((post) => (
-            <PostCard key={post.PostID} post={post} />
+            <PostCard key={post.PostID} post={post} requireAuth={requireAuth} />
           ))}
 
           <div className="flex justify-center my-6">
             <Button
               variant="outline"
               className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              onClick={handleLoadMore}
             >
               Cargar más
             </Button>

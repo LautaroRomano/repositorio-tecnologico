@@ -1,0 +1,428 @@
+"use client";
+import { useState, useRef, FormEvent, ChangeEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { FaPlus, FaTimes, FaUpload, FaGraduationCap } from "react-icons/fa";
+import { MdSend } from "react-icons/md";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { Progress } from "@/components/ui/progress";
+
+// Lista de carreras de ejemplo
+const careers = [
+  { id: 1, name: "Ingeniería Informática" },
+  { id: 2, name: "Ciencias de la Computación" },
+  { id: 3, name: "Ingeniería de Software" },
+  { id: 4, name: "Ingeniería de Sistemas" },
+  { id: 5, name: "Ingeniería Electrónica" },
+];
+
+interface FileWithPreview {
+  file: File;
+  id: string;
+  preview: string;
+}
+
+export default function CreatePostPage() {
+  const router = useRouter();
+  const [content, setContent] = useState("");
+  const [careerId, setCareerId] = useState<string>("");
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isLoggedIn } = useAuth();
+
+  // Redirigir si el usuario no está logueado
+  useEffect(() => {
+    if (isLoggedIn === false) {
+      toast.info("Necesitas iniciar sesión para crear una publicación");
+      router.push("/login");
+    }
+  }, [isLoggedIn, router]);
+
+  // Manejar la subida de archivos
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
+
+    const newFilesArray: FileWithPreview[] = Array.from(selectedFiles).map(
+      (file) => ({
+        file,
+        id: Math.random().toString(36).substring(2, 11),
+        preview: URL.createObjectURL(file),
+      })
+    );
+
+    setFiles((prevFiles) => [...prevFiles, ...newFilesArray]);
+
+    // Limpiar el input de archivo para permitir seleccionar el mismo archivo nuevamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Eliminar un archivo
+  const removeFile = (id: string) => {
+    setFiles((prevFiles) => {
+      const updatedFiles = prevFiles.filter((file) => file.id !== id);
+
+      // Liberar URL de objeto para evitar fugas de memoria
+      prevFiles.forEach((file) => {
+        if (file.id === id) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+
+      return updatedFiles;
+    });
+  };
+
+  // Agregar un tag
+  const addTag = (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentTag.trim() || tags.includes(currentTag.trim())) return;
+    setTags([...tags, currentTag.trim()]);
+    setCurrentTag("");
+  };
+
+  // Eliminar un tag
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  // Enviar el formulario
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    // Validaciones
+    if (!content.trim()) {
+      toast.error("El contenido no puede estar vacío");
+      return;
+    }
+
+    if (!careerId) {
+      toast.error("Debes seleccionar una carrera");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Crear un FormData para enviar archivos
+      const formData = new FormData();
+      formData.append("content", content);
+      formData.append("career_id", careerId);
+
+      // Agregar tags si existen
+      if (tags.length > 0) {
+        formData.append("tags", JSON.stringify(tags));
+      }
+
+      // Agregar los archivos al FormData
+      if (files.length > 0) {
+        files.forEach((fileObj) => {
+          formData.append("files[]", fileObj.file);
+        });
+      }
+
+      // Simular una demora para efectos de demostración
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const res = await axios.post("/api/posts/", formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      console.log(res.data);
+
+      // Ejecutar en caso de error
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error("Error al crear la publicación");
+      }
+
+      // Simulamos éxito
+      toast.success("¡Publicación creada con éxito!");
+
+      // Redirigir a la página principal
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+    } catch (err: any) {
+      console.error("Error al crear la publicación:", err);
+      setError(err.response?.data?.message || "Error al crear la publicación");
+      toast.error("Ocurrió un error al crear la publicación");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoggedIn === null || isLoggedIn === false) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center w-64">
+          <p className="mb-2">Verificando autenticación...</p>
+          <Progress value={80} className="h-2 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto py-10 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-8"
+      >
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Crear Publicación
+        </h1>
+        <p className="text-gray-500">Comparte contenido con la comunidad</p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <form onSubmit={handleSubmit}>
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+
+            <CardHeader className="pb-2 pt-6">
+              <h2 className="text-xl font-medium text-center">
+                Nueva publicación
+              </h2>
+            </CardHeader>
+
+            <CardContent className="space-y-6 pt-4">
+              {/* Contenido del post */}
+              <div className="space-y-2">
+                <Label htmlFor="content">Contenido</Label>
+                <Textarea
+                  id="content"
+                  placeholder="¿Qué quieres compartir?"
+                  rows={5}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className={`resize-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    error ? "border-red-500" : ""
+                  }`}
+                />
+              </div>
+
+              {/* Carrera */}
+              <div className="space-y-2">
+                <Label htmlFor="career" className="flex items-center gap-2">
+                  <FaGraduationCap className="text-gray-500" />
+                  Carrera
+                </Label>
+                <Select
+                  value={careerId}
+                  onValueChange={(value) => setCareerId(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una carrera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {careers.map((career) => (
+                      <SelectItem key={career.id} value={career.id.toString()}>
+                        {career.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Etiquetas / Tags */}
+              <div className="space-y-2">
+                <Label htmlFor="tags">Etiquetas</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="tags"
+                    placeholder="Añadir etiqueta"
+                    value={currentTag}
+                    onChange={(e) => setCurrentTag(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === "Enter" && addTag(e)}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={addTag}
+                    className="ml-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <FaPlus />
+                  </Button>
+                </div>
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {tags.map((tag, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 gap-1"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="rounded-full w-4 h-4 inline-flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-200 transition-colors ml-1"
+                        >
+                          <FaTimes size={10} />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Archivos */}
+              <div className="space-y-2">
+                <Label htmlFor="files" className="mb-2">
+                  Archivos
+                </Label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors ${
+                    files.length ? "border-blue-300" : "border-gray-300"
+                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <FaUpload className="mx-auto h-10 w-10 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-500">
+                    Haz clic para seleccionar archivos o arrastra y suelta
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    PNG, JPG, PDF, DOC hasta 10MB
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    id="files"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+
+                {files.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                    {files.map((file) => (
+                      <div key={file.id} className="relative group">
+                        <div className="h-24 border rounded-md overflow-hidden flex items-center justify-center">
+                          {file.file.type.includes("image") ? (
+                            <img
+                              src={file.preview}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-gray-500 text-center p-2">
+                              <div className="text-3xl mb-1">
+                                {file.file.type.includes("pdf")
+                                  ? "PDF"
+                                  : file.file.type.includes("doc")
+                                  ? "DOC"
+                                  : "FILE"}
+                              </div>
+                              <p className="text-xs truncate max-w-full">
+                                {file.file.name}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(file.id);
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <FaTimes size={10} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex justify-end space-x-2 bg-gray-50 px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                className="border-gray-300"
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 transition-all"
+                disabled={isLoading || !content.trim() || !careerId}
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Publicando...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <MdSend /> Publicar
+                  </span>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </motion.div>
+    </div>
+  );
+}

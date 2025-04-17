@@ -21,6 +21,7 @@ func main() {
 	database.Migrate()
 
 	router := gin.Default()
+	router.RedirectTrailingSlash = false
 
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)

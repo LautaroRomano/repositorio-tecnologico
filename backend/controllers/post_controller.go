@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,7 +16,156 @@ import (
 )
 
 func GetPosts(c *gin.Context) {
-	// Implementar la lógica para obtener todos los posts
+	// Obtener parámetros de paginación
+	page := 1      // Valor por defecto
+	pageSize := 10 // Tamaño fijo de 10 posts por página
+
+	// Obtener número de página desde query params
+	pageParam := c.DefaultQuery("page", "1")
+	pageNum, err := strconv.Atoi(pageParam)
+	if err != nil || pageNum < 1 {
+		page = 1
+	} else {
+		page = pageNum
+	}
+
+	// Calcular offset para paginación
+	offset := (page - 1) * pageSize
+
+	// Obtener posts con relaciones necesarias
+	var posts []models.Post
+	result := database.DB.Model(&models.Post{}).
+		Preload("Comments").
+		Preload("Comments.User").
+		Preload("Likes").
+		Preload("Likes.User").
+		Order("created_at DESC").
+		Limit(pageSize).
+		Offset(offset).
+		Find(&posts)
+
+	if result.Error != nil {
+		c.JSON(500, gin.H{"error": "Error al obtener los posts"})
+		return
+	}
+
+	// Construir respuesta
+	var response []gin.H
+
+	for _, post := range posts {
+		// Buscar información de Universidad
+		var universityName string
+		database.DB.Model(&models.University{}).
+			Select("name").
+			Where("university_id = ?", post.UniversityID).
+			Pluck("name", &universityName)
+
+		// Buscar información de Carrera
+		var careerName string
+		database.DB.Model(&models.Career{}).
+			Select("name").
+			Where("career_id = ?", post.CareerID).
+			Pluck("name", &careerName)
+
+		// Buscar archivos asociados al post
+		var files []models.PostFile
+		database.DB.Where("post_id = ?", post.PostID).Find(&files)
+
+		// Construir estructura de usuario
+		// Obtener información del usuario para cada post
+		var user models.User
+		database.DB.Where("user_id = ?", post.UserID).First(&user)
+
+		// Construir estructura de usuario
+		userResponse := gin.H{
+			"UserID":   user.UserID,
+			"Username": user.Username,
+			"Avatar":   user.Img,
+		}
+		// Construir estructura de comentarios
+		commentsResponse := []gin.H{}
+		for _, comment := range post.Comments {
+			commentUser := gin.H{
+				"UserID":   comment.User.UserID,
+				"Username": comment.User.Username,
+				"Avatar":   comment.User.Img,
+			}
+
+			commentsResponse = append(commentsResponse, gin.H{
+				"CommentID": comment.CommentID,
+				"PostID":    comment.PostID,
+				"UserID":    comment.UserID,
+				"Content":   comment.Content,
+				"CreatedAt": comment.CreatedAt,
+				"User":      commentUser,
+			})
+		}
+
+		// Construir estructura de likes
+		likesResponse := []gin.H{}
+		for _, like := range post.Likes {
+			likeUser := gin.H{
+				"UserID":   like.User.UserID,
+				"Username": like.User.Username,
+				"Avatar":   like.User.Img,
+			}
+
+			likesResponse = append(likesResponse, gin.H{
+				"LikeID":  like.LikeID,
+				"PostID":  like.PostID,
+				"UserID":  like.UserID,
+				"LikedAt": like.LikedAt,
+				"User":    likeUser,
+			})
+		}
+
+		// Construir estructura de archivos
+		filesResponse := []gin.H{}
+		for _, file := range files {
+			filesResponse = append(filesResponse, gin.H{
+				"FileID":   file.FileID,
+				"FileURL":  file.FileURL,
+				"FileType": file.FileType,
+				"PostID":   file.PostID,
+			})
+		}
+
+		// Armar respuesta completa de cada post
+		postResponse := gin.H{
+			"PostID":       post.PostID,
+			"UserID":       post.UserID,
+			"Content":      post.Content,
+			"CreatedAt":    post.CreatedAt,
+			"Tags":         post.Tags,
+			"UniversityID": post.UniversityID,
+			"CareerID":     post.CareerID,
+			"University":   gin.H{"Name": universityName},
+			"Career":       gin.H{"Name": careerName},
+			"User":         userResponse,
+			"Comments":     commentsResponse,
+			"Likes":        likesResponse,
+			"Files":        filesResponse,
+		}
+
+		response = append(response, postResponse)
+	}
+
+	// Obtener total de posts para metadatos de paginación
+	var totalPosts int64
+	database.DB.Model(&models.Post{}).Count(&totalPosts)
+
+	// Calcular total de páginas
+	totalPages := int(math.Ceil(float64(totalPosts) / float64(pageSize)))
+
+	c.JSON(200, gin.H{
+		"posts": response,
+		"pagination": gin.H{
+			"current_page": page,
+			"total_pages":  totalPages,
+			"page_size":    pageSize,
+			"total_items":  totalPosts,
+		},
+	})
 }
 
 func GetPostByID(c *gin.Context) {

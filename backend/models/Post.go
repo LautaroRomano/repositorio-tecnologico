@@ -18,11 +18,12 @@ type Post struct {
 }
 
 type Comment struct {
-	CommentID uint   `gorm:"primaryKey"`
-	PostID    uint   `gorm:"not null"`
-	UserID    uint   `gorm:"not null"`
-	Content   string `gorm:"not null"`
-	CreatedAt time.Time
+	CommentID uint      `gorm:"primaryKey" json:"comment_id"`
+	PostID    uint      `json:"post_id"`
+	UserID    uint      `json:"user_id"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+	User      User      `gorm:"foreignKey:UserID" json:"user"`
 }
 
 type PostLike struct {

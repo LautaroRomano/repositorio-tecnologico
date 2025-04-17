@@ -9,13 +9,13 @@ import (
 func PostRoutes(r *gin.Engine) {
 	posts := r.Group("/posts")
 	{
-		posts.GET("/", controllers.GetPosts)
+		posts.GET("", controllers.GetPosts) // Changed from "/" to ""
 		posts.GET("/:id", controllers.GetPostByID)
 		// Rutas protegidas que requieren autenticación
-		authorized := posts.Group("/")
+		authorized := posts.Group("") // Changed from "/" to ""
 		authorized.Use(middleware.AuthMiddleware())
 		{
-			authorized.POST("/", controllers.CreatePost)
+			authorized.POST("", controllers.CreatePost) // Changed from "/" to ""
 			authorized.PUT("/:id", controllers.UpdatePost)
 			authorized.DELETE("/:id", controllers.DeletePost)
 		}
