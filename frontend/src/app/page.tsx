@@ -39,7 +39,9 @@ function HomePage() {
           throw new Error(data.error);
         }
 
-        setPosts(data.posts);
+        if (!data?.posts || data.posts.length === 0)
+          toast.info("No hay publicaciones para mostrar");
+        else setPosts(data.posts);
         setError(false);
       } catch (err) {
         console.error("Error loading mock posts:", err);

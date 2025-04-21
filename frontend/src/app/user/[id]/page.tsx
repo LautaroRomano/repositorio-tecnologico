@@ -87,7 +87,9 @@ export default function UserProfilePage() {
           throw new Error("Error al cargar publicaciones");
         }
 
-        setUserPosts(postsResponse.data.posts);
+        if (!postsResponse.data?.posts || postsResponse.data.posts.length === 0)
+          toast.info("No hay publicaciones para mostrar");
+        else setUserPosts(postsResponse.data.posts);
       } catch (err) {
         console.error("Error cargando datos del usuario:", err);
         setError(true);
