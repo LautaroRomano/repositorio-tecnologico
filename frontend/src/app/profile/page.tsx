@@ -46,6 +46,7 @@ interface University {
 interface Career {
   CareerID: number;
   Name: string;
+  UniversityID: number;
 }
 
 interface UserProfile {
@@ -58,7 +59,7 @@ interface UserProfile {
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, requireAuth } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const [username, setUsername] = useState("");
@@ -91,49 +92,49 @@ export default function EditProfilePage() {
   }, [isLoggedIn, router]);
 
   // Cargar datos del usuario y opciones de selección
-  useEffect(() => {
-    const fetchData = async () => {
-      if (isLoggedIn === null) return;
+  const fetchData = async () => {
+    if (isLoggedIn === null) return;
 
-      setIsLoading(true);
-      setError("");
+    setIsLoading(true);
+    setError("");
 
-      try {
-        // Cargar datos del usuario actual
-        const userResponse = await axios.get("/api/users/me", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+    try {
+      // Cargar datos del usuario actual
+      const userResponse = await axios.get("/api/users/me", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-        if (userResponse.status !== 200) {
-          throw new Error("Error al cargar información del usuario");
-        }
-
-        const userData = userResponse.data.user;
-        setProfile(userData);
-        setUsername(userData.Username || "");
-        setAvatarPreview(userData.Avatar || "");
-        setUniversityId(userData.UniversityID?.toString() || "");
-        setCareerId(userData.CareerID?.toString() || "");
-
-        // Cargar universidades
-        const univResponse = await axios.get("/api/universities");
-        setUniversities(univResponse.data.universities || []);
-
-        // Cargar carreras
-        const careerResponse = await axios.get("/api/careers");
-        setCareers(careerResponse.data.careers || []);
-      } catch (err) {
-        console.error("Error cargando datos:", err);
-        setError("Error al cargar tus datos. Intenta nuevamente.");
-        toast.error("Error al cargar tus datos");
-      } finally {
-        setIsLoading(false);
+      if (userResponse.status !== 200) {
+        throw new Error("Error al cargar información del usuario");
       }
-    };
 
-    fetchData();
+      const userData = userResponse.data.user;
+      setProfile(userData);
+      setUsername(userData.Username || "");
+      setAvatarPreview(userData.Avatar || "");
+      setUniversityId(userData.UniversityID?.toString() || "none");
+      setCareerId(userData.CareerID?.toString() || "none");
+
+      // Cargar universidades
+      const univResponse = await axios.get("/api/universities");
+      setUniversities(univResponse.data.universities || []);
+
+      // Cargar carreras
+      const careerResponse = await axios.get("/api/careers");
+      setCareers(careerResponse.data.careers || []);
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+      setError("Error al cargar tus datos. Intenta nuevamente.");
+      toast.error("Error al cargar tus datos");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (isLoggedIn === null) return;
+    requireAuth(() => fetchData());
   }, [isLoggedIn]);
 
   // Manejar cambio de archivo de avatar
@@ -143,13 +144,15 @@ export default function EditProfilePage() {
 
     // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
+      console.log("Tipo de archivo no válido:", file.type);
       toast.error("Por favor selecciona una imagen válida");
       return;
     }
 
-    // Validar tamaño (máximo 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("La imagen es demasiado grande. Máximo 2MB");
+    // Validar tamaño (máximo 4MB)
+    if (file.size > 4 * 1024 * 1024) {
+      console.log("Tamaño de archivo demasiado grande:", file.size);
+      toast.error("La imagen es demasiado grande. Máximo 4MB");
       return;
     }
 
@@ -178,11 +181,11 @@ export default function EditProfilePage() {
         formData.append("avatar", avatarFile);
       }
 
-      if (universityId) {
+      if (universityId && universityId !== "none") {
         formData.append("university_id", universityId);
       }
 
-      if (careerId) {
+      if (careerId && careerId !== "none") {
         formData.append("career_id", careerId);
       }
 
@@ -326,6 +329,7 @@ export default function EditProfilePage() {
                 Nombre de usuario
               </Label>
               <Input
+                readOnly={true}
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -343,7 +347,7 @@ export default function EditProfilePage() {
                   <SelectValue placeholder="Selecciona universidad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin especificar</SelectItem>
+                  <SelectItem value="none">Sin especificar</SelectItem>
                   {universities.map((univ) => (
                     <SelectItem
                       key={univ.UniversityID}
@@ -361,20 +365,28 @@ export default function EditProfilePage() {
                 <FaGraduationCap className="text-gray-500" />
                 Carrera
               </Label>
-              <Select value={careerId} onValueChange={setCareerId}>
+              <Select
+                value={careerId}
+                onValueChange={setCareerId}
+                disabled={!universityId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona carrera" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin especificar</SelectItem>
-                  {careers.map((career) => (
-                    <SelectItem
-                      key={career.CareerID}
-                      value={career.CareerID.toString()}
-                    >
-                      {career.Name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {careers
+                    .filter(
+                      (career) => career.UniversityID === parseInt(universityId)
+                    )
+                    .map((career) => (
+                      <SelectItem
+                        key={career.CareerID}
+                        value={career.CareerID.toString()}
+                      >
+                        {career.Name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -17,8 +17,8 @@ import (
 
 func GetPosts(c *gin.Context) {
 	// Obtener parámetros de paginación
-	page := 1      // Valor por defecto
-	pageSize := 10 // Tamaño fijo de 10 posts por página
+	page := 1     // Valor por defecto
+	pageSize := 3 // Tamaño fijo de 10 posts por página
 
 	// Obtener número de página desde query params
 	pageParam := c.DefaultQuery("page", "1")

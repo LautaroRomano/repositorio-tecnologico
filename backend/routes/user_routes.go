@@ -19,6 +19,8 @@ func UserRoutes(r *gin.Engine) {
 		{
 			authUsers.GET("/followers", controllers.GetFollowers)
 			authUsers.GET("/me", controllers.GetCurrentUser)
+			authUsers.PUT("/me", controllers.UpdateUserProfile)
+			authUsers.PUT("/me/password", controllers.ChangePassword)
 		}
 	}
 }

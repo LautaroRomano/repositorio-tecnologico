@@ -16,43 +16,46 @@ function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
   const router = useRouter();
   const { requireAuth } = useAuth();
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setIsLoading(true);
-        // setPosts(mockPosts);
+  const fetchPosts = async ({ page = 1 }) => {
+    try {
+      setIsLoading(true);
+      // setPosts(mockPosts);
 
-        const res = await axios.get("/api/posts", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+      const res = await axios.get("/api/posts", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-        if (res.status !== 200) {
-          throw new Error("Error fetching posts");
-        }
-        const data = res.data;
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        if (!data?.posts || data.posts.length === 0)
-          toast.info("No hay publicaciones para mostrar");
-        else setPosts(data.posts);
-        setError(false);
-      } catch (err) {
-        console.error("Error loading mock posts:", err);
-        setError(true);
-        toast.error("Error al cargar las publicaciones");
-      } finally {
-        setIsLoading(false);
+      if (res.status !== 200) {
+        throw new Error("Error fetching posts");
       }
-    };
+      const data = res.data;
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-    fetchPosts();
+      if (!data?.posts || data.posts.length === 0)
+        toast.info("No hay publicaciones para mostrar");
+      else setPosts(data.posts);
+      setError(false);
+    } catch (err) {
+      console.error("Error loading mock posts:", err);
+      setError(true);
+      toast.error("Error al cargar las publicaciones");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts({ page: 1 });
   }, []);
 
   const handleCreatePost = () => {
@@ -61,8 +64,39 @@ function HomePage() {
 
   const handleLoadMore = () => {
     requireAuth(() => {
-      // Lógica para cargar más publicaciones
-      toast.info("Cargando más publicaciones...");
+      if (isLoadingMore || !hasMore) return;
+      setIsLoadingMore(true);
+      setPage((prevPage) => prevPage + 1);
+
+      axios
+        .get(`/api/posts?page=${page + 1}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+        .then((res) => {
+          if (res.status !== 200) {
+            throw new Error("Error fetching posts");
+          }
+          const data = res.data;
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          if (!data?.posts || data.posts.length === 0) {
+            setHasMore(false);
+            toast.info("No hay más publicaciones para mostrar");
+          } else {
+            setPosts((prevPosts) => [...prevPosts, ...data.posts]);
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading more posts:", err);
+          toast.error("Error al cargar más publicaciones");
+        })
+        .finally(() => {
+          setIsLoadingMore(false);
+        });
     });
   };
 
@@ -118,11 +152,11 @@ function HomePage() {
 
           <div className="flex justify-center my-6">
             <Button
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
               onClick={handleLoadMore}
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+              disabled={isLoadingMore || !hasMore}
             >
-              Cargar más
+              {isLoadingMore ? "Cargando..." : "Cargar más"}
             </Button>
           </div>
         </div>

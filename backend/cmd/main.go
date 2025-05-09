@@ -26,6 +26,8 @@ func main() {
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)
 	routes.PostRoutes(router)
+	routes.UniversityRoutes(router)
+	routes.CareerRoutes(router)
 
 	// Inicializar Cloudinary
 	err = config.SetupCloudinary()

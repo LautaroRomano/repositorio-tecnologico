@@ -1,11 +1,21 @@
 package controllers
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/LautaroRomano/repositorio-tecnologico/config"
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
 	"github.com/LautaroRomano/repositorio-tecnologico/models"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -235,14 +245,26 @@ func GetUserPosts(c *gin.Context) {
 // GetCurrentUser obtiene la información del usuario autenticado
 func GetCurrentUser(c *gin.Context) {
 	// Obtener ID del usuario desde el token (implementado en middleware de autenticación)
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
 		return
 	}
 
+	// Convertir userID a string independientemente de si es uint o int
+	var userIDStr string
+	switch v := userID.(type) {
+	case int:
+		userIDStr = strconv.Itoa(v)
+	case uint:
+		userIDStr = strconv.FormatUint(uint64(v), 10)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tipo de ID de usuario no válido"})
+		return
+	}
+
 	// Reutilizar la lógica existente pasando el ID como parámetro
-	c.Params = append(c.Params, gin.Param{Key: "id", Value: strconv.Itoa(userID.(int))})
+	c.Params = append(c.Params, gin.Param{Key: "id", Value: userIDStr})
 	GetUserProfile(c)
 }
 
@@ -261,4 +283,234 @@ func GetFollowers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, followers)
+}
+
+func UpdateUserProfile(c *gin.Context) {
+	// Obtener ID del usuario desde el token (implementado en middleware de autenticación)
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
+		return
+	}
+
+	// Procesar múltiples archivos
+	form, err := c.MultipartForm()
+	if err == nil &&
+		form.File != nil &&
+		form.File["avatar"] != nil && len(form.File["avatar"]) > 0 &&
+		form.Value != nil &&
+		form.Value["university_id"] != nil && len(form.Value["university_id"]) > 0 &&
+		form.Value["career_id"] != nil && len(form.Value["career_id"]) > 0 {
+
+		file := form.File["avatar"][0]
+		university_id := form.Value["university_id"][0]
+		career_id := form.Value["career_id"][0]
+
+		userIDStr := strconv.FormatUint(uint64(userID.(uint)), 10)
+		userID, err := strconv.Atoi(userIDStr)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de usuario inválido"})
+			return
+		}
+
+		// Abrir el archivo
+		openedFile, err := file.Open()
+		if err != nil {
+			c.JSON(500, gin.H{"error": fmt.Sprintf("No se pudo abrir el archivo %s: %v", file.Filename, err)})
+			return
+		}
+		defer openedFile.Close()
+
+		// Determinar el tipo de archivo basado en la extensión
+		fileType := determineFileType(file.Filename)
+
+		if fileType != "image" {
+			c.JSON(400, gin.H{"error": "El archivo debe ser una imagen"})
+			return
+		}
+
+		// Subir a Cloudinary
+		ctx := context.Background()
+		uploadParams := uploader.UploadParams{
+			Folder: "avatars",
+		}
+
+		result, err := config.Cld.Upload.Upload(ctx, openedFile, uploadParams)
+		if err != nil {
+			c.JSON(500, gin.H{"error": fmt.Sprintf("Error al subir archivo %s: %v", file.Filename, err)})
+			return
+		}
+
+		// Guardar URL del avatar en la base de datos
+		var user models.User
+		if err := database.DB.First(&user, userID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Usuario no encontrado"})
+			return
+		}
+		user.Img = result.SecureURL
+
+		// Convertir university_id de string a uint
+		universityID, err := strconv.Atoi(university_id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de universidad inválido"})
+			return
+		}
+		user.UniversityID = uint(universityID)
+
+		// Convertir career_id de string a uint
+		careerID, err := strconv.Atoi(career_id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de carrera inválido"})
+			return
+		}
+		user.CareerID = uint(careerID)
+		if err := database.DB.Save(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el avatar"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Usuario actualizado con éxito", "user": user})
+		return
+	}
+
+	// Obtener los campos del formulario
+	universityIDStr := c.PostForm("university_id")
+	careerIDStr := c.PostForm("career_id")
+
+	// Buscar el usuario actual
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	// Actualizar university_id si se proporcionó
+	if universityIDStr != "" {
+		universityID, err := strconv.Atoi(universityIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de universidad inválido"})
+			return
+		}
+		user.UniversityID = uint(universityID)
+	}
+
+	// Actualizar career_id si se proporcionó
+	if careerIDStr != "" {
+		careerID, err := strconv.Atoi(careerIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de carrera inválido"})
+			return
+		}
+		user.CareerID = uint(careerID)
+	}
+
+	// Procesar el avatar si se proporcionó
+	file, fileHeader, err := c.Request.FormFile("avatar")
+	if err == nil {
+		defer file.Close()
+
+		// Validar tipo de archivo (debe ser una imagen)
+		if !strings.HasPrefix(fileHeader.Header.Get("Content-Type"), "image/") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "El archivo debe ser una imagen"})
+			return
+		}
+
+		// Aquí implementarías la lógica para guardar la imagen
+		// Por ejemplo, guardarla en un directorio o subirla a un servicio de almacenamiento en la nube
+		// y luego almacenar la URL en la base de datos
+
+		// Ejemplo (modificar según tu implementación actual):
+		fileName := strconv.FormatUint(uint64(user.UserID), 10) + "_" + strconv.FormatInt(time.Now().Unix(), 10) + filepath.Ext(fileHeader.Filename)
+		filePath := "uploads/avatars/" + fileName
+
+		// Asegurarse de que el directorio existe
+		if err := os.MkdirAll("uploads/avatars", 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear directorio para avatar"})
+			return
+		}
+
+		// Guardar el archivo
+		if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar el avatar"})
+			return
+		}
+
+		// Actualizar la URL del avatar en el modelo de usuario
+		user.Img = "/" + filePath
+	}
+
+	// Guardar los cambios en la base de datos
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el perfil"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Perfil actualizado con éxito",
+		"user": gin.H{
+			"UserID":       user.UserID,
+			"Username":     user.Username,
+			"Avatar":       user.Img,
+			"UniversityID": user.UniversityID,
+			"CareerID":     user.CareerID,
+		},
+	})
+}
+
+// ChangePassword handles changing user password
+func ChangePassword(c *gin.Context) {
+	var passwordChange struct {
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&passwordChange); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid input format"})
+		return
+	}
+
+	// Get the user ID from the token/session
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(401, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	// Verify current password and update to new password
+	// This is where you would implement your password change logic
+	err := verifyAndUpdatePassword(userID.(uint), passwordChange.CurrentPassword, passwordChange.NewPassword)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Password changed successfully"})
+}
+
+// Helper function to verify current password and update to new password
+func verifyAndUpdatePassword(userID uint, currentPassword, newPassword string) error {
+	// Get the user from the database
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return err
+	}
+
+	// Verify the current password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return errors.New("current password is incorrect")
+	}
+
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("error processing new password")
+	}
+
+	// Update the password in the database
+	result := database.DB.Model(&user).Update("password_hash", string(hashedPassword))
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }
