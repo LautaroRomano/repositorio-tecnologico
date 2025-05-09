@@ -231,7 +231,7 @@ export default function UserProfilePage() {
                 {isSelf && (
                   <Button
                     className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
-                    onClick={() => router.push("/perfil/editar")}
+                    onClick={() => router.push("/myprofile")}
                   >
                     Editar perfil
                   </Button>

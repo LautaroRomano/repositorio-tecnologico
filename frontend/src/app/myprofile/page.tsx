@@ -37,25 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
-
-interface University {
-  UniversityID: number;
-  Name: string;
-}
-
-interface Career {
-  CareerID: number;
-  Name: string;
-  UniversityID: number;
-}
-
-interface UserProfile {
-  UserID: number;
-  Username: string;
-  Avatar?: string;
-  UniversityID?: number;
-  CareerID?: number;
-}
+import { Career, University, UserProfile } from "@/types/types";
 
 export default function EditProfilePage() {
   const router = useRouter();

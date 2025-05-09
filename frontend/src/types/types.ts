@@ -43,3 +43,22 @@ export interface Post {
   Likes: PostLike[];
   Files: PostFile[];
 }
+
+export interface University {
+  UniversityID: number;
+  Name: string;
+}
+
+export interface Career {
+  CareerID: number;
+  Name: string;
+  UniversityID: number;
+}
+
+export interface UserProfile {
+  UserID: number;
+  Username: string;
+  Avatar?: string;
+  UniversityID?: number;
+  CareerID?: number;
+}
