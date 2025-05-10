@@ -281,3 +281,146 @@ func UpdatePost(c *gin.Context) {
 func DeletePost(c *gin.Context) {
 	// Implementar la lógica para eliminar un post
 }
+
+func SearchPosts(c *gin.Context) {
+	// Obtener parámetros de búsqueda
+	query := c.Query("q")
+	universityID := c.Query("university")
+	careerID := c.Query("career")
+	tags := c.Query("tags")
+
+	// Construir la consulta base
+	db := database.DB.Model(&models.Post{}).
+		Preload("Comments").
+		Preload("Comments.User").
+		Preload("Likes").
+		Preload("Likes.User").
+		Preload("User")
+
+	// Aplicar filtros
+	if query != "" {
+		db = db.Where("content ILIKE ?", "%"+query+"%")
+	}
+
+	if universityID != "" {
+		db = db.Where("university_id = ?", universityID)
+	}
+
+	if careerID != "" {
+		db = db.Where("career_id = ?", careerID)
+	}
+
+	if tags != "" {
+		tagList := strings.Split(tags, ",")
+		for _, tag := range tagList {
+			db = db.Where("tags @> ARRAY[?]::text[]", tag)
+		}
+	}
+
+	// Ejecutar la consulta
+	var posts []models.Post
+	if err := db.Order("created_at DESC").Find(&posts).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Error al buscar posts"})
+		return
+	}
+
+	// Construir la respuesta
+	var response []gin.H
+	for _, post := range posts {
+		// Buscar información de Universidad
+		var universityName string
+		database.DB.Model(&models.University{}).
+			Select("name").
+			Where("university_id = ?", post.UniversityID).
+			Pluck("name", &universityName)
+
+		// Buscar información de Carrera
+		var careerName string
+		database.DB.Model(&models.Career{}).
+			Select("name").
+			Where("career_id = ?", post.CareerID).
+			Pluck("name", &careerName)
+
+		// Buscar archivos asociados al post
+		var files []models.PostFile
+		database.DB.Where("post_id = ?", post.PostID).Find(&files)
+
+		// Construir estructura de usuario
+		userResponse := gin.H{
+			"UserID":   post.User.UserID,
+			"Username": post.User.Username,
+			"Avatar":   post.User.Img,
+		}
+
+		// Construir estructura de comentarios
+		commentsResponse := []gin.H{}
+		for _, comment := range post.Comments {
+			commentUser := gin.H{
+				"UserID":   comment.User.UserID,
+				"Username": comment.User.Username,
+				"Avatar":   comment.User.Img,
+			}
+
+			commentsResponse = append(commentsResponse, gin.H{
+				"CommentID": comment.CommentID,
+				"PostID":    comment.PostID,
+				"UserID":    comment.UserID,
+				"Content":   comment.Content,
+				"CreatedAt": comment.CreatedAt,
+				"User":      commentUser,
+			})
+		}
+
+		// Construir estructura de likes
+		likesResponse := []gin.H{}
+		for _, like := range post.Likes {
+			likeUser := gin.H{
+				"UserID":   like.User.UserID,
+				"Username": like.User.Username,
+				"Avatar":   like.User.Img,
+			}
+
+			likesResponse = append(likesResponse, gin.H{
+				"LikeID":  like.LikeID,
+				"PostID":  like.PostID,
+				"UserID":  like.UserID,
+				"LikedAt": like.LikedAt,
+				"User":    likeUser,
+			})
+		}
+
+		// Construir estructura de archivos
+		filesResponse := []gin.H{}
+		for _, file := range files {
+			filesResponse = append(filesResponse, gin.H{
+				"FileID":   file.FileID,
+				"FileURL":  file.FileURL,
+				"FileType": file.FileType,
+				"PostID":   file.PostID,
+			})
+		}
+
+		// Armar respuesta completa de cada post
+		postResponse := gin.H{
+			"PostID":       post.PostID,
+			"UserID":       post.UserID,
+			"Content":      post.Content,
+			"CreatedAt":    post.CreatedAt,
+			"Tags":         post.Tags,
+			"UniversityID": post.UniversityID,
+			"CareerID":     post.CareerID,
+			"University":   gin.H{"Name": universityName},
+			"Career":       gin.H{"Name": careerName},
+			"User":         userResponse,
+			"Comments":     commentsResponse,
+			"Likes":        likesResponse,
+			"Files":        filesResponse,
+		}
+
+		response = append(response, postResponse)
+	}
+
+	c.JSON(200, gin.H{
+		"posts": response,
+	})
+}

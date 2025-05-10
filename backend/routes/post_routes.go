@@ -11,6 +11,9 @@ func PostRoutes(r *gin.Engine) {
 	{
 		posts.GET("", controllers.GetPosts) // Changed from "/" to ""
 		posts.GET("/:id", controllers.GetPostByID)
+
+		posts.GET("/search", controllers.SearchPosts)
+
 		// Rutas protegidas que requieren autenticación
 		authorized := posts.Group("") // Changed from "/" to ""
 		authorized.Use(middleware.AuthMiddleware())
