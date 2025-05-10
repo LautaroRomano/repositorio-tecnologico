@@ -33,9 +33,14 @@ interface PostCardProps {
 
 const PostCard = ({ post, requireAuth }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(
+    post.Likes.some(
+      (like) => like.UserID === Number(localStorage.getItem("userID"))
+    )
+  );
   const [likeCount, setLikeCount] = useState(post.Likes.length);
   const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState(post.Comments);
 
   // Función para formatear la fecha
   const formatDate = (dateString: string) => {
@@ -50,17 +55,22 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
   const handleLike = async () => {
     requireAuth(async () => {
       try {
-        if (isLiked) {
-          // Llamada para quitar el like
-          await axios.delete(`/posts/${post.PostID}/likes`);
-          setLikeCount((prev) => prev - 1);
-        } else {
-          // Llamada para dar like
-          await axios.post(`/posts/${post.PostID}/likes`);
-          setLikeCount((prev) => prev + 1);
+        const res = await axios.post(
+          `/api/posts/${post.PostID}/likes`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (res.status === 200) {
+          setIsLiked(!isLiked);
+          setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
         }
-        setIsLiked(!isLiked);
       } catch (error) {
+        console.error("Error al procesar el like:", error);
         toast.error("Error al procesar tu acción");
       }
     });
@@ -71,13 +81,24 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
 
     requireAuth(async () => {
       try {
-        // Aquí iría la lógica para enviar el comentario
-        // await axios.post(`/posts/${post.PostID}/comments`, { content: commentText });
+        const res = await axios.post(
+          `/api/posts/${post.PostID}/comments`,
+          { content: commentText },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
-        toast.success("Comentario añadido");
-        setCommentText("");
-        // Actualizaríamos los comentarios aquí con setComments o similar
+        if (res.status === 200) {
+          // Agregar el nuevo comentario a la lista
+          setComments((prev) => [...prev, res.data.comment]);
+          setCommentText("");
+          toast.success("Comentario añadido");
+        }
       } catch (error) {
+        console.error("Error al publicar el comentario:", error);
         toast.error("Error al publicar el comentario");
       }
     });
@@ -240,9 +261,9 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
             >
               <FaComment />
               <span>
-                {post.Comments.length === 1
+                {comments.length === 1
                   ? "1 comentario"
-                  : `${post.Comments.length} comentarios`}
+                  : `${comments.length} comentarios`}
               </span>
             </Button>
           </div>
@@ -254,13 +275,13 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
               Comentarios
             </h4>
 
-            {post.Comments.length === 0 ? (
+            {comments.length === 0 ? (
               <p className="text-sm text-gray-500 italic">
                 No hay comentarios aún
               </p>
             ) : (
               <div className="space-y-3">
-                {post.Comments.map((comment) => (
+                {comments.map((comment) => (
                   <div key={comment.CommentID} className="flex gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={comment.User.Avatar || ""} />
@@ -285,7 +306,6 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
               </div>
             )}
 
-            {/* Formulario para agregar comentarios */}
             <div className="mt-3 flex gap-2">
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarFallback className="bg-blue-100 text-blue-800">

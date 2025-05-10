@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LautaroRomano/repositorio-tecnologico/config"
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
@@ -422,5 +423,87 @@ func SearchPosts(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"posts": response,
+	})
+}
+
+// LikePost maneja la acción de dar like a un post
+func LikePost(c *gin.Context) {
+	postID := c.Param("id")
+	userID := c.GetInt("userID") // Asumiendo que tienes middleware de autenticación
+
+	// Verificar si el like ya existe
+	var existingLike models.PostLike
+	result := database.DB.Where("post_id = ? AND user_id = ?", postID, userID).First(&existingLike)
+
+	if result.Error == nil {
+		// Si el like existe, lo eliminamos (toggle)
+		if err := database.DB.Delete(&existingLike).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Error al quitar el like"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "Like eliminado"})
+		return
+	}
+
+	// Si el like no existe, lo creamos
+	postIDUint, _ := strconv.ParseUint(postID, 10, 32)
+	newLike := models.PostLike{
+		PostID:  uint(postIDUint),
+		UserID:  uint(userID),
+		LikedAt: time.Now(),
+	}
+
+	if err := database.DB.Create(&newLike).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Error al dar like"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Like agregado"})
+}
+
+// AddComment maneja la acción de agregar un comentario
+func AddComment(c *gin.Context) {
+	postID := c.Param("id")
+	userID := c.GetInt("userID") // Asumiendo que tienes middleware de autenticación
+
+	var commentData struct {
+		Content string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&commentData); err != nil {
+		c.JSON(400, gin.H{"error": "Contenido del comentario requerido"})
+		return
+	}
+
+	postIDUint, _ := strconv.ParseUint(postID, 10, 32)
+	newComment := models.Comment{
+		PostID:    uint(postIDUint),
+		UserID:    uint(userID),
+		Content:   commentData.Content,
+		CreatedAt: time.Now(),
+	}
+
+	if err := database.DB.Create(&newComment).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Error al crear el comentario"})
+		return
+	}
+
+	// Cargar la información del usuario para la respuesta
+	var user models.User
+	database.DB.First(&user, userID)
+
+	c.JSON(200, gin.H{
+		"comment": gin.H{
+			"CommentID": newComment.CommentID,
+			"PostID":    newComment.PostID,
+			"UserID":    newComment.UserID,
+			"Content":   newComment.Content,
+			"CreatedAt": newComment.CreatedAt,
+			"User": gin.H{
+				"UserID":   user.UserID,
+				"Username": user.Username,
+				"Avatar":   user.Img,
+			},
+		},
 	})
 }

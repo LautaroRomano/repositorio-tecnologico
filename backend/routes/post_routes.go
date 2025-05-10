@@ -21,6 +21,8 @@ func PostRoutes(r *gin.Engine) {
 			authorized.POST("", controllers.CreatePost) // Changed from "/" to ""
 			authorized.PUT("/:id", controllers.UpdatePost)
 			authorized.DELETE("/:id", controllers.DeletePost)
+			authorized.POST("/:id/likes", controllers.LikePost)
+			authorized.POST("/:id/comments", controllers.AddComment)
 		}
 	}
 }
