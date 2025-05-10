@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Componente de esqueleto para carga
 export default function PostSkeleton() {
   return (
-    <div className="mb-6">
+    <div className="mb-6 md:w-[500px]">
       <Card className="overflow-hidden border-0 shadow-md">
         <div className="h-1 bg-gradient-to-r from-gray-300 to-gray-200"></div>
 

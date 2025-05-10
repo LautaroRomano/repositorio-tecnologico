@@ -1,6 +1,6 @@
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 export function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -8,7 +8,7 @@ export function useAuth() {
 
   useEffect(() => {
     // Comprueba si hay un token en localStorage
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);
 
@@ -16,10 +16,16 @@ export function useAuth() {
     if (isLoggedIn) {
       action();
     } else {
-      toast.info('Inicia sesión para continuar', { autoClose: 3000 });
-      router.push('/login');
+      toast.info("Inicia sesión para continuar", { autoClose: 3000 });
+      router.push("/login");
     }
   };
 
-  return { isLoggedIn, requireAuth };
+  const logout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    //router.push("/login");
+  };
+
+  return { isLoggedIn, requireAuth, logout };
 }

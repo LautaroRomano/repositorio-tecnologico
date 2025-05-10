@@ -157,8 +157,6 @@ export default function CreatePostPage() {
         },
       });
 
-      console.log(res.data);
-
       // Ejecutar en caso de error
       if (res.status !== 200 && res.status !== 201) {
         throw new Error("Error al crear la publicación");

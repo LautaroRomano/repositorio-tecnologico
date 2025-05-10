@@ -99,7 +99,7 @@ function HomePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-6 px-4 sm:px-6">
+    <div className="flex  flex-col py-6 px-4 sm:px-6 items-center">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -143,7 +143,7 @@ function HomePage() {
           </Button>
         </Card>
       ) : (
-        <div>
+        <div className="w-auto md:w-[500px]">
           {posts.map((post) => (
             <PostCard key={post.PostID} post={post} requireAuth={requireAuth} />
           ))}

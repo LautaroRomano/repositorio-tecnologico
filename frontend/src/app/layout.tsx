@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/app-sidebar";
+import { MobileNav } from "@/components/app/mobile-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +32,23 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider>
-          <AppSidebar />
-            <SidebarTrigger />
-          <main className="flex flex-col min-h-screen w-full">
-            <Providers>{children}</Providers>
-          </main>
+          <div className="flex min-h-screen  w-full">
+            {/* Sidebar para desktop */}
+            <div className="hidden md:block">
+              <AppSidebar />
+              <SidebarTrigger />
+            </div>
+
+            {/* Contenido principal */}
+            <main className="flex-1 pb-16 md:pb-0">
+              <div className="container mx-auto px-4 md:px-6">
+                <Providers>{children}</Providers>
+              </div>
+            </main>
+          </div>
+
+          {/* Navegación móvil */}
+          <MobileNav />
         </SidebarProvider>
       </body>
     </html>
