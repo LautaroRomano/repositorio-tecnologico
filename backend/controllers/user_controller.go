@@ -15,9 +15,8 @@ import (
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
 	"github.com/LautaroRomano/repositorio-tecnologico/models"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // GetUserProfile obtiene información detallada del perfil de un usuario

@@ -51,3 +51,28 @@ func Migrate() {
 
 	log.Println("Migración completada exitosamente.")
 }
+
+func InitDB() {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "root:@tcp(127.0.0.1:3306)/repositorio_tecnologico?charset=utf8mb4&parseTime=True&loc=Local"
+	}
+
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// Migrate the schema
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.University{},
+		&models.Career{},
+		&models.Post{},
+		&models.Follow{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+}

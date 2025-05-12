@@ -7,21 +7,22 @@ import (
 )
 
 type User struct {
-	UserID       uint   `gorm:"primaryKey"`
-	Username     string `gorm:"uniqueIndex;not null"`
-	Email        string `gorm:"uniqueIndex;not null"`
-	PasswordHash string `gorm:"not null"`
-	AccountName  string
-	Img          string
-	About        string
-	UniversityID uint       `gorm:"foreignKey:UniversityID"`
-	CareerID     uint       `gorm:"foreignKey:CareerID"`
-	University   University `gorm:"foreignKey:UniversityID"`
-	Career       Career     `gorm:"foreignKey:CareerID"`
-	Followers    []Follow   `gorm:"foreignKey:FollowedID"`
-	Following    []Follow   `gorm:"foreignKey:FollowerID"`
-
-	CreatedAt time.Time
+	UserID               uint       `json:"user_id" gorm:"primaryKey"`
+	Username             string     `json:"username" gorm:"unique"`
+	Email                string     `json:"email" gorm:"unique"`
+	PasswordHash         string     `json:"-"`
+	AccountName          string     `json:"account_name"`
+	Img                  string     `json:"img"`
+	ResetPasswordToken   string     `json:"-"`
+	ResetPasswordExpires time.Time  `json:"-"`
+	CreatedAt            time.Time  `json:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at"`
+	UniversityID         uint       `gorm:"foreignKey:UniversityID"`
+	CareerID             uint       `gorm:"foreignKey:CareerID"`
+	University           University `gorm:"foreignKey:UniversityID"`
+	Career               Career     `gorm:"foreignKey:CareerID"`
+	Followers            []Follow   `gorm:"foreignKey:FollowedID"`
+	Following            []Follow   `gorm:"foreignKey:FollowerID"`
 
 	Posts    []Post    `gorm:"foreignKey:UserID"`
 	Comments []Comment `gorm:"foreignKey:UserID"`
