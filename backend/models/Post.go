@@ -40,5 +40,6 @@ type PostFile struct {
 	FileID   uint   `gorm:"primaryKey"`
 	FileURL  string `gorm:"not null"`
 	FileType string `gorm:"not null"`
+	FileName string `gorm:"not null"`
 	PostID   uint   `gorm:"not null"`
 }

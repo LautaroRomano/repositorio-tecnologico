@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-
+import { useAuth } from "@/hooks/useAuth";
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +32,7 @@ function LoginPage() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { handleLogin } = useAuth();
 
   useEffect(() => {
     const param1 = searchParams.get("error");
@@ -53,13 +54,7 @@ function LoginPage() {
       if (res.status === 200 || res.status === 201) {
         localStorage.setItem("token", res.data.token);
         setSuccess(true);
-        toast.success(
-          res.status === 200 ? "Bienvenido de nuevo!" : "Bienvenido!",
-          {
-            autoClose: 2000,
-          }
-        );
-        setTimeout(() => router.push("/"), 1000);
+        handleLogin(res.data.token);
         return;
       }
 
@@ -213,15 +208,7 @@ function LoginPage() {
       </motion.div>
 
       <div className="mt-6 text-center text-sm text-gray-500">
-        <p>
-          ¿Olvidaste tu contraseña? Contacta con{" "}
-          <a
-            href="mailto:redapuntes.info@gmail.com"
-            className="text-blue-600 hover:underline"
-          >
-            redapuntes.info@gmail.com
-          </a>
-        </p>
+        <NextLink href="/forgot-password">¿Olvidaste tu contraseña?</NextLink>
       </div>
     </div>
   );

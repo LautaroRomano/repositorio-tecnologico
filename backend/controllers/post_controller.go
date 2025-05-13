@@ -223,7 +223,8 @@ func CreatePost(c *gin.Context) {
 				// Subir a Cloudinary
 				ctx := context.Background()
 				uploadParams := uploader.UploadParams{
-					Folder: "post_files",
+					Folder:       "post_files",
+					ResourceType: "auto",
 				}
 
 				result, err := config.Cld.Upload.Upload(ctx, openedFile, uploadParams)
@@ -235,8 +236,9 @@ func CreatePost(c *gin.Context) {
 				// Guardar referencia del archivo en la base de datos
 				postFile := models.PostFile{
 					FileURL:  result.SecureURL,
-					PostID:   post.PostID, // Ahora tenemos el ID correcto
+					PostID:   post.PostID,
 					FileType: fileType,
+					FileName: file.Filename,
 				}
 
 				database.DB.Create(&postFile)
@@ -261,17 +263,23 @@ func determineFileType(filename string) string {
 	// Check file type based on extension
 	switch extension {
 	case ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp":
-		return "image"
-	case ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx":
-		return "document"
+		return "image/jpeg"
+	case ".pdf":
+		return "application/pdf"
+	case ".doc", ".docx":
+		return "application/msword"
+	case ".xls", ".xlsx":
+		return "application/vnd.ms-excel"
+	case ".ppt", ".pptx":
+		return "application/vnd.ms-powerpoint"
 	case ".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv":
-		return "video"
+		return "video/mp4"
 	case ".mp3", ".wav", ".ogg", ".flac", ".aac":
-		return "audio"
+		return "audio/mpeg"
 	case ".zip", ".rar", ".7z", ".tar", ".gz":
-		return "compressed"
+		return "application/zip"
 	default:
-		return "other"
+		return "application/octet-stream"
 	}
 }
 

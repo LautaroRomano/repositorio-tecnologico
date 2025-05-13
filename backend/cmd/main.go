@@ -7,6 +7,7 @@ import (
 	"github.com/LautaroRomano/repositorio-tecnologico/config"
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
 	"github.com/LautaroRomano/repositorio-tecnologico/routes"
+	"github.com/LautaroRomano/repositorio-tecnologico/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -23,11 +24,13 @@ func main() {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false
 
-	routes.AuthRoutes(router)
+	routes.SetupAuthRoutes(router)
 	routes.UserRoutes(router)
 	routes.PostRoutes(router)
 	routes.UniversityRoutes(router)
 	routes.CareerRoutes(router)
+
+	utils.InitResendClient(os.Getenv("RESEND_API_KEY"))
 
 	// Inicializar Cloudinary
 	err = config.SetupCloudinary()

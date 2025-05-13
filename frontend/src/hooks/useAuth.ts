@@ -24,8 +24,16 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
+    toast.success("Cerraste sesión correctamente", { autoClose: 2000 });
     //router.push("/login");
   };
 
-  return { isLoggedIn, requireAuth, logout };
+  const handleLogin = (token: string) => {
+    localStorage.setItem("token", token);
+    setIsLoggedIn(true);
+    toast.success("Bienvenido de nuevo!", { autoClose: 2000 });
+    setTimeout(() => router.push("/"), 1000);
+  };
+
+  return { isLoggedIn, requireAuth, logout, handleLogin };
 }

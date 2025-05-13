@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/resendlabs/resend-go"
-
 )
 
 var resendClient *resend.Client
@@ -13,7 +12,7 @@ func InitResendClient(apiKey string) {
 
 func SendPasswordResetEmail(to, resetToken string) error {
 	params := &resend.SendEmailRequest{
-		From:    "noreply@yourdomain.com",
+		From:    "noreply@redapuntes.com",
 		To:      []string{to},
 		Subject: "Recuperación de contraseña",
 		Html:    generatePasswordResetEmailHTML(resetToken),
@@ -29,7 +28,7 @@ func generatePasswordResetEmailHTML(token string) string {
 			<body>
 				<h2>Recuperación de contraseña</h2>
 				<p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
-				<a href="http://yourdomain.com/reset-password?token=` + token + `">Restablecer contraseña</a>
+				<a href="http://localhost:3000/reset-password?token=` + token + `">Restablecer contraseña</a>
 				<p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
 				<p>El enlace expirará en 1 hora.</p>
 			</body>

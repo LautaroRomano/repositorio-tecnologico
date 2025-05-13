@@ -156,54 +156,51 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
           <div className="mb-3 whitespace-pre-wrap">{post.Content}</div>
 
           {post.Files && post.Files.length > 0 && (
-            <div className="mb-4 grid grid-cols-3 gap-2">
+            <div className="mb-4 grid grid-cols-1 gap-2">
               {post.Files.map((file) => (
                 <div
                   key={file.FileID}
-                  className="relative rounded-lg overflow-hidden bg-gray-100"
+                  className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-200 p-3"
                 >
-                  {file.FileType.includes("image") ? (
-                    <div className="relative">
-                      <img
-                        src={file.FileURL}
-                        alt="Adjunto"
-                        className="w-full h-32 object-cover"
-                      />
-                      <button
-                        onClick={() =>
-                          handleDownload(
-                            file.FileURL,
-                            file.FileURL.split("/").pop() || "imagen"
-                          )
-                        }
-                        className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-full shadow-md flex items-center gap-1 text-sm"
-                        title="Descargar imagen"
-                      >
-                        <FaDownload size={14} />
-                        <span className="hidden sm:inline">Descargar</span>
-                      </button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {file.FileType.includes("image") ? (
+                        <div className="relative w-16 h-16">
+                          <img
+                            src={file.FileURL}
+                            alt="Adjunto"
+                            className="w-full h-full object-cover rounded"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
+                          <MdAttachFile size={32} className="text-gray-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {file.FileURL.split("/").pop()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {file.FileType}
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="h-24 w-full flex items-center justify-center text-gray-500 relative">
-                      <MdAttachFile size={32} />
-                      <span className="ml-2 text-sm">
-                        {file.FileURL.split("/").pop()}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleDownload(
-                            file.FileURL,
-                            file.FileURL.split("/").pop() || "archivo"
-                          )
-                        }
-                        className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-full shadow-md flex items-center gap-1 text-sm"
-                        title="Descargar archivo"
-                      >
-                        <FaDownload size={14} />
-                        <span className="hidden sm:inline">Descargar</span>
-                      </button>
-                    </div>
-                  )}
+                    <Button
+                      onClick={() =>
+                        handleDownload(
+                          file.FileURL,
+                          file.FileURL.split("/").pop() || "archivo"
+                        )
+                      }
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <FaDownload size={14} />
+                      <span>Descargar</span>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

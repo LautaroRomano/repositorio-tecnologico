@@ -25,6 +25,7 @@ export interface PostFile {
   FileID: number;
   FileURL: string;
   FileType: string;
+  FileName: string;
   PostID: number;
 }
 

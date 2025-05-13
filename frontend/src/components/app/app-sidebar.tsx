@@ -69,6 +69,7 @@ export function AppSidebar() {
   const [isLoading, setIsLoading] = useState(true);
 
   const { isLoggedIn, requireAuth, logout } = useAuth();
+  console.log("🚀 ~ AppSidebar ~ isLoggedIn:", isLoggedIn)
   const pathname = usePathname();
 
   const instagramStyles = {
