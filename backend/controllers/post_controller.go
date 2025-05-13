@@ -128,6 +128,7 @@ func GetPosts(c *gin.Context) {
 				"FileURL":  file.FileURL,
 				"FileType": file.FileType,
 				"PostID":   file.PostID,
+				"FileName": file.FileName,
 			})
 		}
 
@@ -406,6 +407,7 @@ func SearchPosts(c *gin.Context) {
 				"FileURL":  file.FileURL,
 				"FileType": file.FileType,
 				"PostID":   file.PostID,
+				"FileName": file.FileName,
 			})
 		}
 
