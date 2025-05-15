@@ -54,7 +54,7 @@ function LoginPage() {
       if (res.status === 200 || res.status === 201) {
         localStorage.setItem("token", res.data.token);
         setSuccess(true);
-        handleLogin(res.data.token);
+        handleLogin(res.data.token, res.data.me);
         return;
       }
 

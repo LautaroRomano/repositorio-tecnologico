@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -39,21 +40,22 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        "/api/auth/reset-password",
+        {
+          token,
+          password,
         },
-        body: JSON.stringify({ token, password }),
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const data = await response.json();
+      const data = await response.data;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Error al restablecer la contraseña");
-      }
-
-      toast.success("Contraseña actualizada con éxito", {
+      toast.success(data.message, {
         autoClose: 2000,
       });
 

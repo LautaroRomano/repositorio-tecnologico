@@ -29,6 +29,7 @@ func main() {
 	routes.PostRoutes(router)
 	routes.UniversityRoutes(router)
 	routes.CareerRoutes(router)
+	routes.SetupChannelRoutes(router)
 
 	utils.InitResendClient(os.Getenv("RESEND_API_KEY"))
 

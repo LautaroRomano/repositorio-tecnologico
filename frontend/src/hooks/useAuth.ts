@@ -1,9 +1,10 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-
+import { User } from "@/types/types";
 export function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [me, setMe] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,12 +29,13 @@ export function useAuth() {
     //router.push("/login");
   };
 
-  const handleLogin = (token: string) => {
+  const handleLogin = (token: string, me: User) => {
     localStorage.setItem("token", token);
     setIsLoggedIn(true);
+    setMe(me);
     toast.success("Bienvenido de nuevo!", { autoClose: 2000 });
     setTimeout(() => router.push("/"), 1000);
   };
 
-  return { isLoggedIn, requireAuth, logout, handleLogin };
+  return { isLoggedIn, requireAuth, logout, handleLogin, me };
 }

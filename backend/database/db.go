@@ -44,6 +44,13 @@ func Migrate() {
 		&models.Follow{},
 		&models.University{},
 		&models.Career{},
+		&models.Channel{},
+		&models.ChannelMember{},
+		&models.ChannelInvitation{},
+		&models.ChannelPost{},
+		&models.ChannelPostComment{},
+		&models.ChannelPostLike{},
+		&models.ChannelPostFile{},
 	)
 	if err != nil {
 		log.Fatalf("Error en la migración: %v", err)

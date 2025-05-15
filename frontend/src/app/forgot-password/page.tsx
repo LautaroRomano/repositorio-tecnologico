@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,19 +18,15 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        "/api/auth/forgot-password",
+        {
+          email,
         },
-        body: JSON.stringify({ email }),
-      });
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Error al procesar la solicitud");
-      }
+      const data = await response.data;
 
       toast.success(data.message, {
         autoClose: 2000,

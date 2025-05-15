@@ -41,7 +41,7 @@ export default function RootLayout({
 
             {/* Contenido principal */}
             <main className="flex-1 pb-16 md:pb-0">
-              <div className="container mx-auto px-4 md:px-6">
+              <div className="container mx-auto">
                 <Providers>{children}</Providers>
               </div>
             </main>

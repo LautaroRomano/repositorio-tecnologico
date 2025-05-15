@@ -137,14 +137,14 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
 
         <CardHeader className="p-4 pb-3 flex items-center space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={post.User.Avatar || ""} />
+            <AvatarImage src={post.User.profilePicture || ""} />
             <AvatarFallback className="bg-blue-100 text-blue-800">
               <FaUser />
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1">
-            <h3 className="font-medium">{post.User.Username}</h3>
+            <h3 className="font-medium">{post.User.name}</h3>
             <p className="text-xs text-gray-500">
               {formatDate(post.CreatedAt)}
             </p>
@@ -279,17 +279,15 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
                 {comments.map((comment) => (
                   <div key={comment.CommentID} className="flex gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={comment.User.Avatar || ""} />
+                      <AvatarImage src={comment.User.profilePicture || ""} />
                       <AvatarFallback className="text-xs bg-blue-100 text-blue-800">
-                        {comment.User.Username.substring(0, 2).toUpperCase()}
+                        {comment.User.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="flex-1">
                       <div className="bg-white rounded-lg p-2 text-sm">
-                        <span className="font-medium">
-                          {comment.User.Username}
-                        </span>
+                        <span className="font-medium">{comment.User.name}</span>
                         <p className="text-gray-800">{comment.Content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">

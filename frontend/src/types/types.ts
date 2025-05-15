@@ -1,7 +1,13 @@
 export interface User {
   UserID: number;
-  Username: string;
-  Avatar?: string;
+  Email: string;
+  Name: string;
+  ProfilePicture?: string;
+  Role: string;
+  UniversityID?: number;
+  CareerID?: number;
+  University?: University;
+  Career?: Career;
 }
 
 export interface Comment {
@@ -62,4 +68,79 @@ export interface UserProfile {
   Avatar?: string;
   UniversityID?: number;
   CareerID?: number;
+}
+
+export interface Channel {
+  ChannelID: number;
+  Name: string;
+  Description: string;
+  IsPrivate: boolean;
+  CreatedAt: string;
+  CreatedBy: number;
+  UniversityID: number;
+  CareerID: number;
+  Creator?: User;
+  University?: University;
+  Career?: Career;
+  Members?: ChannelMember[];
+}
+
+export interface ChannelMember {
+  MemberID: number;
+  ChannelID: number;
+  UserID: number;
+  IsAdmin: boolean;
+  JoinedAt: string;
+  LastSeenAt: string;
+  User?: User;
+}
+
+export interface ChannelInvitation {
+  InvitationID: number;
+  ChannelID: number;
+  InvitedBy: number;
+  InvitedUser: number;
+  Status: "pending" | "accepted" | "rejected";
+  CreatedAt: string;
+  UpdatedAt: string;
+  Channel?: Channel;
+  Inviter?: User;
+}
+
+export interface ChannelPost {
+  PostID: number;
+  ChannelID: number;
+  UserID: number;
+  Content: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  Tags: string[];
+  User?: User;
+  Files?: ChannelPostFile[];
+  Comments?: ChannelPostComment[];
+  Likes?: ChannelPostLike[];
+}
+
+export interface ChannelPostFile {
+  FileID: number;
+  PostID: number;
+  FileURL: string;
+  FileType: string;
+  FileName: string;
+}
+
+export interface ChannelPostComment {
+  CommentID: number;
+  PostID: number;
+  UserID: number;
+  Content: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  User?: User;
+}
+
+export interface ChannelPostLike {
+  LikeID: number;
+  PostID: number;
+  UserID: number;
 }
