@@ -10,6 +10,11 @@ export interface User {
   Career?: Career;
 }
 
+export interface Tag {
+  TagID: number;
+  Name: string;
+}
+
 export interface Comment {
   CommentID: number;
   PostID: number;
@@ -40,7 +45,7 @@ export interface Post {
   UserID: number;
   Content: string;
   CreatedAt: string;
-  Tags: string[];
+  Tags: Tag[];
   UniversityID: number;
   CareerID: number;
   University?: { Name: string };

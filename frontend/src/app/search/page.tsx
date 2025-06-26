@@ -14,17 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Post } from "@/types/types";
+import { Post, Tag } from "@/types/types";
 import PostCard from "@/components/app/post-card";
 import { useAuth } from "@/hooks/useAuth";
+import { TagMultiSelect } from "@/components/ui/tag-multi-select";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 interface SearchFilters {
   query: string;
-  university: string;
   career: string;
-  tags: string[];
+  tags: Tag[];
 }
 
 export default function SearchPage() {
@@ -32,30 +32,16 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     query: "",
-    university: "all",
     career: "all",
     tags: [],
   });
-  const [universities, setUniversities] = useState<
-    { UniversityID: number; Name: string }[]
-  >([]);
   const [careers, setCareers] = useState<{ CareerID: number; Name: string }[]>(
     []
   );
-  const [currentTag, setCurrentTag] = useState("");
   const { requireAuth } = useAuth();
 
-  // Cargar universidades y carreras
+  // Cargar carreras
   useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const res = await axios.get("/api/universities");
-        setUniversities(res.data.universities);
-      } catch (error) {
-        console.error("Error fetching universities:", error);
-      }
-    };
-
     const fetchCareers = async () => {
       try {
         const res = await axios.get("/api/careers");
@@ -65,7 +51,6 @@ export default function SearchPage() {
       }
     };
 
-    fetchUniversities();
     fetchCareers();
   }, []);
 
@@ -74,12 +59,12 @@ export default function SearchPage() {
     try {
       const queryParams = new URLSearchParams();
       if (filters.query) queryParams.append("q", filters.query);
-      if (filters.university && filters.university !== "all")
-        queryParams.append("university", filters.university);
       if (filters.career && filters.career !== "all")
         queryParams.append("career", filters.career);
-      if (filters.tags.length > 0)
-        queryParams.append("tags", filters.tags.join(","));
+      if (filters.tags.length > 0) {
+        const tagIds = filters.tags.map(tag => tag.TagID);
+        queryParams.append("tag_ids", JSON.stringify(tagIds));
+      }
 
       const res = await axios.get(
         `/api/posts/search?${queryParams.toString()}`,
@@ -97,23 +82,6 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const addTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentTag.trim() || filters.tags.includes(currentTag.trim())) return;
-    setFilters((prev) => ({
-      ...prev,
-      tags: [...prev.tags, currentTag.trim()],
-    }));
-    setCurrentTag("");
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
   };
 
   return (
@@ -159,33 +127,6 @@ export default function SearchPage() {
           {/* Filtros */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">
-                Universidad
-              </label>
-              <Select
-                value={filters.university}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, university: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar universidad" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las universidades</SelectItem>
-                  {universities.map((university) => (
-                    <SelectItem
-                      key={university.UniversityID}
-                      value={university.UniversityID.toString()}
-                    >
-                      {university.Name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <label className="text-sm font-medium mb-1 block">Carrera</label>
               <Select
                 value={filters.career}
@@ -209,38 +150,15 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Tags */}
-          <div>
-            <label className="text-sm font-medium mb-1 block">Etiquetas</label>
-            <form onSubmit={addTag} className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Agregar etiqueta..."
-                value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)}
+            {/* Etiquetas */}
+            <div>
+              <label className="text-sm font-medium mb-1 block">Etiquetas</label>
+              <TagMultiSelect
+                selectedTags={filters.tags}
+                onTagsChange={(tags) => setFilters((prev) => ({ ...prev, tags }))}
+                placeholder="Buscar y seleccionar etiquetas..."
               />
-              <Button type="submit" variant="outline">
-                Agregar
-              </Button>
-            </form>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {filters.tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="bg-blue-50 text-blue-600 hover:bg-blue-100"
-                >
-                  {tag}
-                  <button
-                    onClick={() => removeTag(tag)}
-                    className="ml-1 hover:text-blue-800"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
             </div>
           </div>
         </div>

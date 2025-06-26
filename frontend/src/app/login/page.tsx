@@ -1,15 +1,9 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
-import {
-  FaCheckCircle,
-  FaGoogle,
-  FaUser,
-  FaLock,
-  FaEnvelope,
-} from "react-icons/fa";
+import { FaCheckCircle, FaUser, FaLock } from "react-icons/fa";
 import { MdLogin } from "react-icons/md";
 import NextLink from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Progress } from "@/components/ui/progress";
@@ -30,7 +24,6 @@ function LoginPage() {
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { handleLogin } = useAuth();
 
@@ -45,9 +38,10 @@ function LoginPage() {
     setIsLoading(true);
     setError(false);
 
+    const email = username.includes("@") ? username : "";
     try {
       const res = await axios.post("/api/auth/login", {
-        username: username,
+        [email.length > 0 ? 'email' : 'username']: email.length > 0 ? email : username,
         password: password,
       });
 
@@ -61,7 +55,7 @@ function LoginPage() {
       toast.error("Usuario o contraseña incorrectos", { autoClose: false });
     } catch (error) {
       setError(true);
-      toast.error("Error de conexión. Intenta nuevamente.", {
+      toast.error("Ocurrió un error. Intenta nuevamente.", {
         autoClose: 5000,
       });
     } finally {

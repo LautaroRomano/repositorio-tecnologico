@@ -2,7 +2,7 @@
 import { useState, useRef, FormEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { FaPlus, FaTimes, FaUpload, FaGraduationCap } from "react-icons/fa";
+import { FaTimes, FaUpload, FaGraduationCap } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardFooter,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -23,17 +22,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
+import { TagMultiSelect } from "@/components/ui/tag-multi-select";
+import { Tag } from "@/types/types";
 
 // Lista de carreras de ejemplo
 const careers = [
-  { id: 1, name: "Ingeniería Informática" },
-  { id: 2, name: "Ciencias de la Computación" },
-  { id: 3, name: "Ingeniería de Software" },
-  { id: 4, name: "Ingeniería de Sistemas" },
-  { id: 5, name: "Ingeniería Electrónica" },
+  { id: 1, name: "Ingeniería de Sistemas" },
+  { id: 2, name: "Ingeniería Electrónica" },
+  { id: 3, name: "Ingeniería Eléctrica" },
+  { id: 4, name: "Ingeniería Mecánica" },
+  { id: 5, name: "Ingeniería Civil" },
+  { id: 6, name: "Tecnicatura en Programacion" },
+  { id: 7, name: "Tecnicatura en Mecatronica" },
+  { id: 8, name: "Tecnicatura en Higiene y seguridad" },
 ];
 
 interface FileWithPreview {
@@ -47,8 +50,7 @@ export default function CreatePostPage() {
   const [content, setContent] = useState("");
   const [careerId, setCareerId] = useState<string>("");
   const [files, setFiles] = useState<FileWithPreview[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [currentTag, setCurrentTag] = useState("");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,19 +101,6 @@ export default function CreatePostPage() {
     });
   };
 
-  // Agregar un tag
-  const addTag = (e: FormEvent) => {
-    e.preventDefault();
-    if (!currentTag.trim() || tags.includes(currentTag.trim())) return;
-    setTags([...tags, currentTag.trim()]);
-    setCurrentTag("");
-  };
-
-  // Eliminar un tag
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
-
   // Enviar el formulario
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -137,8 +126,9 @@ export default function CreatePostPage() {
       formData.append("career_id", careerId);
 
       // Agregar tags si existen
-      if (tags.length > 0) {
-        formData.append("tags", JSON.stringify(tags));
+      if (selectedTags.length > 0) {
+        const tagIds = selectedTags.map((tag) => tag.TagID);
+        formData.append("tag_ids", JSON.stringify(tagIds));
       }
 
       // Agregar los archivos al FormData
@@ -260,45 +250,11 @@ export default function CreatePostPage() {
               {/* Etiquetas / Tags */}
               <div className="space-y-2">
                 <Label htmlFor="tags">Etiquetas</Label>
-                <div className="flex items-center">
-                  <Input
-                    id="tags"
-                    placeholder="Añadir etiqueta"
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === "Enter" && addTag(e)}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={addTag}
-                    className="ml-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <FaPlus />
-                  </Button>
-                </div>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {tags.map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 gap-1"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="rounded-full w-4 h-4 inline-flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-200 transition-colors ml-1"
-                        >
-                          <FaTimes size={10} />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <TagMultiSelect
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  placeholder="Buscar y seleccionar etiquetas..."
+                />
               </div>
 
               {/* Archivos */}

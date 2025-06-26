@@ -122,8 +122,8 @@ function RegisterPage() {
         setErrorMessage(error.response.data.message);
         toast.error(error.response.data.message, { autoClose: 5000 });
       } else {
-        setErrorMessage("Error de conexión. Intenta nuevamente.");
-        toast.error("Error de conexión. Intenta nuevamente.", {
+        setErrorMessage("Ocurrió un error. Intenta nuevamente.");
+        toast.error("Ocurrió un error. Intenta nuevamente.", {
           autoClose: 5000,
         });
       }
