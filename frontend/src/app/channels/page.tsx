@@ -5,17 +5,11 @@ import { Channel } from "@/types/types";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { BellRing } from "lucide-react";
-import { useRouter } from "next/navigation";
 import ChannelSidebar from "@/components/app/channels/ChannelSidebar";
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
-  console.log("🚀 ~ ChannelsPage ~ channels:", channels);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const { requireAuth, isLoggedIn } = useAuth();
-  console.log("🚀 ~ ChannelsPage ~ isLoggedIn:", isLoggedIn);
 
   useEffect(() => {
     if (isLoggedIn === null) return;
@@ -31,8 +25,6 @@ export default function ChannelsPage() {
       } catch (error) {
         console.log("🚀 ~ fetchChannels ~ error:", error);
         toast.error("Error al obtener los canales");
-      } finally {
-        setIsLoading(false);
       }
     };
     requireAuth(fetchChannels);

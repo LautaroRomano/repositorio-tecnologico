@@ -7,7 +7,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -125,13 +124,13 @@ export function ChannelPostCard({
     <Card className="mb-4">
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar>
-          <AvatarImage src={post.User?.ProfilePicture} />
-          <AvatarFallback>{post.User?.Name?.[0]}</AvatarFallback>
+          <AvatarImage src={post.User?.Avatar} />
+          <AvatarFallback>{post.User?.Username?.[0]}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold">{post.User?.Name}</p>
+              <p className="font-semibold">{post.User?.Username}</p>
               <p className="text-sm text-muted-foreground">
                 {formatDistanceToNow(new Date(post.CreatedAt), {
                   addSuffix: true,
@@ -215,13 +214,13 @@ export function ChannelPostCard({
                 className="flex items-start gap-2 p-2 bg-muted rounded-lg"
               >
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={comment.User?.ProfilePicture} />
-                  <AvatarFallback>{comment.User?.Name?.[0]}</AvatarFallback>
+                  <AvatarImage src={comment.User?.Avatar} />
+                  <AvatarFallback>{comment.User?.Username?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold">
-                      {comment.User?.Name}
+                      {comment.User?.Username}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.CreatedAt), {

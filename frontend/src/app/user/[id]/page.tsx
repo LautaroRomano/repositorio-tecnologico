@@ -17,16 +17,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Post, User } from "@/types/types";
+import { Career, Post, University, User } from "@/types/types";
 import PostCard from "@/components/app/post-card";
 import PostSkeleton from "@/components/app/post-skeleton";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UserProfile extends User {
   JoinDate?: string;
-  University?: { Name: string };
-  Career?: { Name: string };
+  University?: University;
+  Career?: Career;
   PostsCount?: number;
   LikesReceived?: number;
 }
@@ -35,12 +34,11 @@ export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
-  const { requireAuth, isLoggedIn } = useAuth();
+    const { requireAuth } = useAuth();
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState("publicaciones");
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
 
@@ -48,7 +46,6 @@ export default function UserProfilePage() {
     const fetchUserData = async () => {
       if (!userId) return;
 
-      setIsLoading(true);
       setError(false);
 
       try {
@@ -94,8 +91,6 @@ export default function UserProfilePage() {
         console.error("Error cargando datos del usuario:", err);
         setError(true);
         toast.error("Error al cargar la información del usuario");
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -112,7 +107,7 @@ export default function UserProfilePage() {
     }).format(date);
   };
 
-  if (isLoading) {
+  if (!userProfile || !userPosts) {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
         <div className="mb-8">

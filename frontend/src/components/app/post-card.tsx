@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 import { Post } from "@/types/types";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 interface PostCardProps {
   post: Post;
@@ -32,7 +33,6 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post, requireAuth }: PostCardProps) => {
-  console.log("🚀 ~ PostCard ~ post:", post)
   const [showComments, setShowComments] = useState(false);
   const [isLiked, setIsLiked] = useState(
     post.Likes.some(
@@ -42,6 +42,8 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
   const [likeCount, setLikeCount] = useState(post.Likes.length);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(post.Comments);
+
+  const router = useRouter();
 
   // Función para formatear la fecha
   const formatDate = (dateString: string) => {
@@ -115,6 +117,7 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
     try {
       // Crear un enlace temporal
       const link = document.createElement("a");
+      link.target = "_blank";
       link.href = fileUrl;
       link.download = fileName;
       document.body.appendChild(link);
@@ -137,15 +140,15 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
         <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
 
         <CardHeader className="p-4 pb-3 flex items-center space-x-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={post.User.ProfilePicture || ""} />
+          <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/user/${post.User.UserID}`)}>
+            <AvatarImage src={post.User.Avatar || ""} />
             <AvatarFallback className="bg-blue-100 text-blue-800">
               <FaUser />
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1">
-            <h3 className="font-medium">{post.User.Name}</h3>
+            <h3 className="font-medium cursor-pointer" onClick={() => router.push(`/user/${post.User.UserID}`)}>{post.User.Username}</h3>
             <p className="text-xs text-gray-500">
               {formatDate(post.CreatedAt)}
             </p>
@@ -280,15 +283,15 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
                 {comments.map((comment) => (
                   <div key={comment.CommentID} className="flex gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={comment.User.ProfilePicture || ""} />
+                      <AvatarImage src={comment.User.Avatar || ""} />
                       <AvatarFallback className="text-xs bg-blue-100 text-blue-800">
-                        {comment.User.Name.substring(0, 2).toUpperCase()}
+                        {comment.User.Username.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="flex-1">
                       <div className="bg-white rounded-lg p-2 text-sm">
-                        <span className="font-medium">{comment.User.Name}</span>
+                        <span className="font-medium">{comment.User.Username}</span>
                         <p className="text-gray-800">{comment.Content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">

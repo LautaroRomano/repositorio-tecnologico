@@ -138,7 +138,7 @@ export default function ChannelPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div>
-                  <p className="text-sm font-medium">{channel.Creator?.name}</p>
+                  <p className="text-sm font-medium">{channel.Creator?.Username}</p>
                   <p className="text-xs text-muted-foreground">
                     Creado{" "}
                     {formatDistanceToNow(new Date(channel.CreatedAt), {

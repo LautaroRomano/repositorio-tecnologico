@@ -1,13 +1,16 @@
 export interface User {
   UserID: number;
   Email: string;
-  Name: string;
-  ProfilePicture?: string;
+  Username: string;
+  Avatar?: string;
   Role: string;
   UniversityID?: number;
   CareerID?: number;
   University?: University;
   Career?: Career;
+  CreatedAt: string;
+  Posts: number;
+  Likes: number;
 }
 
 export interface Tag {
