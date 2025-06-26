@@ -4,6 +4,7 @@ import (
 	"github.com/LautaroRomano/repositorio-tecnologico/controllers"
 	"github.com/LautaroRomano/repositorio-tecnologico/middleware"
 	"github.com/gin-gonic/gin"
+
 )
 
 func PostRoutes(r *gin.Engine) {
@@ -24,5 +25,8 @@ func PostRoutes(r *gin.Engine) {
 			authorized.POST("/:id/likes", controllers.LikePost)
 			authorized.POST("/:id/comments", controllers.AddComment)
 		}
+		posts.GET("/tags", controllers.GetTags)
+		posts.POST("/tags/recreate", controllers.RecreateTagTables)
 	}
+
 }

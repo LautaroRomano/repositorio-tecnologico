@@ -41,6 +41,8 @@ func Migrate() {
 		&models.Comment{},
 		&models.PostLike{},
 		&models.PostFile{},
+		&models.PostTag{},
+		&models.Tag{},
 		&models.Follow{},
 		&models.University{},
 		&models.Career{},
@@ -77,6 +79,8 @@ func InitDB() {
 		&models.University{},
 		&models.Career{},
 		&models.Post{},
+		&models.PostTag{},
+		&models.Tag{},
 		&models.Follow{},
 	)
 	if err != nil {

@@ -7,14 +7,14 @@ type Post struct {
 	UserID       uint   `gorm:"not null"`
 	Content      string `gorm:"not null"`
 	CreatedAt    time.Time
-	Tags         []string `gorm:"type:text[]"`
-	TSV          string   `gorm:"type:tsvector"`
-	UniversityID uint     `gorm:"not null"`
-	CareerID     uint     `gorm:"not null"`
+	TSV          string `gorm:"type:tsvector"`
+	UniversityID uint   `gorm:"not null"`
+	CareerID     uint   `gorm:"not null"`
 
 	User     User      `gorm:"foreignKey:UserID"`
 	Comments []Comment `gorm:"foreignKey:PostID"`
 	Likes    []PostLike
+	Tags     []Tag `gorm:"many2many:post_tags;foreignKey:PostID;joinForeignKey:post_id;References:TagID;joinReferences:tag_id"`
 }
 
 type Comment struct {

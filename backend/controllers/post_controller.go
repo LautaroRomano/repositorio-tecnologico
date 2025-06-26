@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"github.com/LautaroRomano/repositorio-tecnologico/models"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
+
 )
 
 func GetPosts(c *gin.Context) {
@@ -40,6 +42,7 @@ func GetPosts(c *gin.Context) {
 		Preload("Comments.User").
 		Preload("Likes").
 		Preload("Likes.User").
+		Preload("Tags").
 		Order("created_at DESC").
 		Limit(pageSize).
 		Offset(offset).
@@ -132,13 +135,22 @@ func GetPosts(c *gin.Context) {
 			})
 		}
 
+		// Construir estructura de tags
+		tagsResponse := []gin.H{}
+		for _, tag := range post.Tags {
+			tagsResponse = append(tagsResponse, gin.H{
+				"TagID": tag.TagID,
+				"Name":  tag.Name,
+			})
+		}
+
 		// Armar respuesta completa de cada post
 		postResponse := gin.H{
 			"PostID":       post.PostID,
 			"UserID":       post.UserID,
 			"Content":      post.Content,
 			"CreatedAt":    post.CreatedAt,
-			"Tags":         post.Tags,
+			"Tags":         tagsResponse,
 			"UniversityID": post.UniversityID,
 			"CareerID":     post.CareerID,
 			"University":   gin.H{"Name": universityName},
@@ -178,9 +190,11 @@ func CreatePost(c *gin.Context) {
 	// Implementar la lógica para crear un nuevo post
 	content := c.PostForm("content")
 	careerID := c.PostForm("career_id")
+	tagIDsStr := c.PostForm("tag_ids")
 
 	fmt.Println("Contenido del post:", content)
 	fmt.Println("ID de carrera:", careerID)
+	fmt.Println("IDs de tags:", tagIDsStr)
 
 	// Convertir IDs a uint
 	careerIDUint, err := strconv.ParseUint(careerID, 10, 32)
@@ -200,6 +214,28 @@ func CreatePost(c *gin.Context) {
 	if post.PostID == 0 {
 		c.JSON(500, gin.H{"error": "Error al crear el post"})
 		return
+	}
+
+	// Procesar tags si se proporcionaron
+	if tagIDsStr != "" {
+		var tagIDs []uint
+		err := json.Unmarshal([]byte(tagIDsStr), &tagIDs)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Formato de tag_ids inválido"})
+			return
+		}
+
+		// Verificar que los tags existen y asociarlos al post
+		for _, tagID := range tagIDs {
+			var tag models.Tag
+			if err := database.DB.First(&tag, tagID).Error; err != nil {
+				c.JSON(400, gin.H{"error": fmt.Sprintf("Tag con ID %d no encontrado", tagID)})
+				return
+			}
+
+			// Asociar tag al post usando la relación many-to-many
+			database.DB.Model(&post).Association("Tags").Append(&tag)
+		}
 	}
 
 	// Procesar múltiples archivos
@@ -297,7 +333,7 @@ func SearchPosts(c *gin.Context) {
 	query := c.Query("q")
 	universityID := c.Query("university")
 	careerID := c.Query("career")
-	tags := c.Query("tags")
+	tagIDs := c.Query("tag_ids")
 
 	// Construir la consulta base
 	db := database.DB.Model(&models.Post{}).
@@ -305,7 +341,8 @@ func SearchPosts(c *gin.Context) {
 		Preload("Comments.User").
 		Preload("Likes").
 		Preload("Likes.User").
-		Preload("User")
+		Preload("User").
+		Preload("Tags")
 
 	// Aplicar filtros
 	if query != "" {
@@ -320,10 +357,15 @@ func SearchPosts(c *gin.Context) {
 		db = db.Where("career_id = ?", careerID)
 	}
 
-	if tags != "" {
-		tagList := strings.Split(tags, ",")
-		for _, tag := range tagList {
-			db = db.Where("tags @> ARRAY[?]::text[]", tag)
+	// Filtrar por tags si se proporcionan
+	if tagIDs != "" {
+		var tagIDList []uint
+		err := json.Unmarshal([]byte(tagIDs), &tagIDList)
+		if err == nil && len(tagIDList) > 0 {
+			// Buscar posts que tengan al menos uno de los tags especificados
+			db = db.Joins("JOIN post_tags ON posts.post_id = post_tags.post_id").
+				Where("post_tags.tag_id IN ?", tagIDList).
+				Group("posts.post_id")
 		}
 	}
 
@@ -411,13 +453,22 @@ func SearchPosts(c *gin.Context) {
 			})
 		}
 
+		// Construir estructura de tags
+		tagsResponse := []gin.H{}
+		for _, tag := range post.Tags {
+			tagsResponse = append(tagsResponse, gin.H{
+				"TagID": tag.TagID,
+				"Name":  tag.Name,
+			})
+		}
+
 		// Armar respuesta completa de cada post
 		postResponse := gin.H{
 			"PostID":       post.PostID,
 			"UserID":       post.UserID,
 			"Content":      post.Content,
 			"CreatedAt":    post.CreatedAt,
-			"Tags":         post.Tags,
+			"Tags":         tagsResponse,
 			"UniversityID": post.UniversityID,
 			"CareerID":     post.CareerID,
 			"University":   gin.H{"Name": universityName},
