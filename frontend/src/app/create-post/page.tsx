@@ -2,7 +2,12 @@
 import { useState, useRef, FormEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { FaTimes, FaUpload, FaGraduationCap } from "react-icons/fa";
+import {
+  FaTimes,
+  FaUpload,
+  FaGraduationCap,
+  FaUniversity,
+} from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -25,19 +30,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
 import { TagMultiSelect } from "@/components/ui/tag-multi-select";
-import { Tag } from "@/types/types";
-
-// Lista de carreras de ejemplo
-const careers = [
-  { id: 1, name: "Ingeniería de Sistemas" },
-  { id: 2, name: "Ingeniería Electrónica" },
-  { id: 3, name: "Ingeniería Eléctrica" },
-  { id: 4, name: "Ingeniería Mecánica" },
-  { id: 5, name: "Ingeniería Civil" },
-  { id: 6, name: "Tecnicatura en Programacion" },
-  { id: 7, name: "Tecnicatura en Mecatronica" },
-  { id: 8, name: "Tecnicatura en Higiene y seguridad" },
-];
+import { Tag, University, Career } from "@/types/types";
 
 interface FileWithPreview {
   file: File;
@@ -48,6 +41,9 @@ interface FileWithPreview {
 export default function CreatePostPage() {
   const router = useRouter();
   const [content, setContent] = useState("");
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [universityId, setUniversityId] = useState<string>("");
+  const [careers, setCareers] = useState<Career[]>([]);
   const [careerId, setCareerId] = useState<string>("");
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -56,11 +52,30 @@ export default function CreatePostPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isLoggedIn } = useAuth();
 
+  const handleChangeUniversityId = (id: string) => {
+    setUniversityId(id);
+    // Filtrar las carreras según la universidad seleccionada
+    const filteredCareers = universities.find((uni) => uni.UniversityID === parseInt(id))?.Careers || [];
+    setCareers(filteredCareers);
+  };
+
+  const handleFetchUniversities = async () => {
+    try {
+      const res = await axios.get("/api/universities");
+      setUniversities(res.data.universities);
+    } catch (error) {
+      console.error("Error al obtener universidades:", error);
+      toast.error("Error al obtener universidades");
+    }
+  };
+
   // Redirigir si el usuario no está logueado
   useEffect(() => {
     if (isLoggedIn === false) {
       toast.info("Necesitas iniciar sesión para crear una publicación");
       router.push("/login");
+    } else {
+      handleFetchUniversities();
     }
   }, [isLoggedIn, router]);
 
@@ -111,6 +126,11 @@ export default function CreatePostPage() {
       return;
     }
 
+    if (!universityId) {
+      toast.error("Debes seleccionar una universidad");
+      return;
+    }
+
     if (!careerId) {
       toast.error("Debes seleccionar una carrera");
       return;
@@ -124,6 +144,7 @@ export default function CreatePostPage() {
       const formData = new FormData();
       formData.append("content", content);
       formData.append("career_id", careerId);
+      formData.append("university_id", universityId);
 
       // Agregar tags si existen
       if (selectedTags.length > 0) {
@@ -224,6 +245,32 @@ export default function CreatePostPage() {
                 />
               </div>
 
+              {/* Universidad */}
+              <div className="space-y-2">
+                <Label htmlFor="university" className="flex items-center gap-2">
+                  <FaUniversity className="text-gray-500" />
+                  Universidad
+                </Label>
+                <Select
+                  value={universityId}
+                  onValueChange={(value) => handleChangeUniversityId(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una universidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {universities.map((university) => (
+                      <SelectItem
+                        key={university.UniversityID}
+                        value={university.UniversityID.toString()}
+                      >
+                        {university.Name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Carrera */}
               <div className="space-y-2">
                 <Label htmlFor="career" className="flex items-center gap-2">
@@ -239,8 +286,11 @@ export default function CreatePostPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {careers.map((career) => (
-                      <SelectItem key={career.id} value={career.id.toString()}>
-                        {career.name}
+                      <SelectItem
+                        key={career.CareerID}
+                        value={career.CareerID.toString()}
+                      >
+                        {career.Name}
                       </SelectItem>
                     ))}
                   </SelectContent>

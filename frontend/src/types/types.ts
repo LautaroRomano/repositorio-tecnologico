@@ -62,6 +62,7 @@ export interface Post {
 export interface University {
   UniversityID: number;
   Name: string;
+  Careers?: Career[];
 }
 
 export interface Career {

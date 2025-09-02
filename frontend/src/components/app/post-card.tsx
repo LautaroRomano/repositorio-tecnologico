@@ -200,7 +200,7 @@ const PostCard = ({ post, requireAuth }: PostCardProps) => {
                       className="flex items-center gap-2"
                     >
                       <FaDownload size={14} />
-                      <span>Descargar</span>
+                      <span className="hidden md:block">Descargar</span>
                     </Button>
                   </div>
                 </div>

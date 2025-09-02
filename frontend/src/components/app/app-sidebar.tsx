@@ -56,11 +56,13 @@ const items = [
     title: "Canales",
     url: "/channels",
     icon: GroupIcon,
+    isDisabled: true,
   },
   {
     title: "Ajustes",
     url: "#",
     icon: Settings,
+    isDisabled: true,
   },
 ];
 
@@ -113,8 +115,8 @@ export function AppSidebar() {
     <Sidebar className="flex flex-col h-screen justify-between border-r">
       <SidebarContent>
         <SidebarGroup className="gap-y-4">
-          <SidebarGroupLabel className="px-4 py-2 text-lg font-bold">
-            REPOUNI
+          <SidebarGroupLabel className="px-4 py-2 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            REDAPUNTES
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="px-2">

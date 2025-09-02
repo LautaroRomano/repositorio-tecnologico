@@ -15,13 +15,12 @@ import (
 	"github.com/LautaroRomano/repositorio-tecnologico/models"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
-
 )
 
 func GetPosts(c *gin.Context) {
 	// Obtener parámetros de paginación
 	page := 1     // Valor por defecto
-	pageSize := 3 // Tamaño fijo de 10 posts por página
+	pageSize := 5 // Tamaño fijo de 5 posts por página
 
 	// Obtener número de página desde query params
 	pageParam := c.DefaultQuery("page", "1")
@@ -190,10 +189,12 @@ func CreatePost(c *gin.Context) {
 	// Implementar la lógica para crear un nuevo post
 	content := c.PostForm("content")
 	careerID := c.PostForm("career_id")
+	universityID := c.PostForm("university_id")
 	tagIDsStr := c.PostForm("tag_ids")
 
 	fmt.Println("Contenido del post:", content)
 	fmt.Println("ID de carrera:", careerID)
+	fmt.Println("ID de universidad:", universityID)
 	fmt.Println("IDs de tags:", tagIDsStr)
 
 	// Convertir IDs a uint
@@ -203,10 +204,17 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
+	universityIDUint, err := strconv.ParseUint(universityID, 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "ID de universidad inválido"})
+		return
+	}
+
 	post := models.Post{
-		Content:  content,
-		CareerID: uint(careerIDUint),
-		UserID:   c.MustGet("userID").(uint), //agergar el ID del usuario autenticado
+		Content:      content,
+		CareerID:     uint(careerIDUint),
+		UniversityID: uint(universityIDUint),
+		UserID:       c.MustGet("userID").(uint), //agergar el ID del usuario autenticado
 	}
 
 	// Guardar en base de datos

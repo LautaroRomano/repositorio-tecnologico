@@ -107,7 +107,7 @@ function HomePage() {
         className="text-center mb-8"
       >
         <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Repositorio Tecnológico
+          RED DE APUNTES
         </h1>
         <p className="text-gray-500">Explora las publicaciones más recientes</p>
       </motion.div>
