@@ -5,11 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/LautaroRomano/repositorio-tecnologico/config"
 	"github.com/LautaroRomano/repositorio-tecnologico/database"
@@ -70,6 +66,8 @@ func GetUserProfile(c *gin.Context) {
 		"JoinDate":      user.CreatedAt,
 		"PostsCount":    postsCount,
 		"LikesReceived": likesReceived,
+		"UniversityID":  user.UniversityID,
+		"CareerID":      user.CareerID,
 	}
 
 	// Añadir información de universidad si existe
@@ -324,7 +322,7 @@ func UpdateUserProfile(c *gin.Context) {
 		// Determinar el tipo de archivo basado en la extensión
 		fileType := determineFileType(file.Filename)
 
-		if fileType != "image" {
+		if fileType != "image/jpeg" {
 			c.JSON(400, gin.H{"error": "El archivo debe ser una imagen"})
 			return
 		}
@@ -370,90 +368,9 @@ func UpdateUserProfile(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Usuario actualizado con éxito", "user": user})
 		return
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de entrada inválidos"})
 	}
-
-	// Obtener los campos del formulario
-	universityIDStr := c.PostForm("university_id")
-	careerIDStr := c.PostForm("career_id")
-
-	// Buscar el usuario actual
-	var user models.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario no encontrado"})
-		return
-	}
-
-	// Actualizar university_id si se proporcionó
-	if universityIDStr != "" {
-		universityID, err := strconv.Atoi(universityIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de universidad inválido"})
-			return
-		}
-		user.UniversityID = uint(universityID)
-	}
-
-	// Actualizar career_id si se proporcionó
-	if careerIDStr != "" {
-		careerID, err := strconv.Atoi(careerIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ID de carrera inválido"})
-			return
-		}
-		user.CareerID = uint(careerID)
-	}
-
-	// Procesar el avatar si se proporcionó
-	file, fileHeader, err := c.Request.FormFile("avatar")
-	if err == nil {
-		defer file.Close()
-
-		// Validar tipo de archivo (debe ser una imagen)
-		if !strings.HasPrefix(fileHeader.Header.Get("Content-Type"), "image/") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "El archivo debe ser una imagen"})
-			return
-		}
-
-		// Aquí implementarías la lógica para guardar la imagen
-		// Por ejemplo, guardarla en un directorio o subirla a un servicio de almacenamiento en la nube
-		// y luego almacenar la URL en la base de datos
-
-		// Ejemplo (modificar según tu implementación actual):
-		fileName := strconv.FormatUint(uint64(user.UserID), 10) + "_" + strconv.FormatInt(time.Now().Unix(), 10) + filepath.Ext(fileHeader.Filename)
-		filePath := "uploads/avatars/" + fileName
-
-		// Asegurarse de que el directorio existe
-		if err := os.MkdirAll("uploads/avatars", 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear directorio para avatar"})
-			return
-		}
-
-		// Guardar el archivo
-		if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar el avatar"})
-			return
-		}
-
-		// Actualizar la URL del avatar en el modelo de usuario
-		user.Img = "/" + filePath
-	}
-
-	// Guardar los cambios en la base de datos
-	if err := database.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el perfil"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Perfil actualizado con éxito",
-		"user": gin.H{
-			"UserID":       user.UserID,
-			"Username":     user.Username,
-			"Avatar":       user.Img,
-			"UniversityID": user.UniversityID,
-			"CareerID":     user.CareerID,
-		},
-	})
 }
 
 // ChangePassword handles changing user password
