@@ -13,13 +13,53 @@ import (
 var DB *gorm.DB
 
 func Connect() {
+	// Esta función ahora se llama desde vercel.go con la configuración ya validada
+	// Obtener configuración de la base de datos
+	dbHost := os.Getenv("DB_HOST")
+		dbUser := os.Getenv("DB_USER")
+		dbPassword := os.Getenv("DB_PASSWORD")
+		dbName := os.Getenv("DB_NAME")
+		dbPort := os.Getenv("DB_PORT")
+		dbSSLMode := os.Getenv("DB_SSLMODE")
+		
+		if dbPort == "" {
+			dbPort = "5432"
+		}
+		if dbSSLMode == "" {
+			dbSSLMode = "require"
+		}
+		
+		if dbHost != "" && dbUser != "" && dbName != "" && dbSSLMode != "" {
+			log.Println("Variables de entorno encontradas, usando configuración de producción")
+		} else {
+			log.Println("Variables de entorno incompletas, usando valores por defecto")
+		}
+	
+	log.Printf("Conectando a la base de datos: %s:%s/%s", dbHost, dbPort, dbName)
+
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode,
+	)
+
+	var err error
+	// Disable foreign key constraints during migration
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
+	if err != nil {
+		log.Fatalf("Error conectando a la base de datos: %v", err)
+	}
+	log.Println("Conexión con PostgreSQL establecida correctamente.")
+}
+
+// ConnectWithConfig permite conectar con configuración específica
+func ConnectWithConfig(host, user, password, dbname, port, sslmode string) {
+	log.Printf("Conectando a la base de datos: %s:%s/%s", host, port, dbname)
+
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s timezone=Argentina/Buenos_Aires",
+		host, user, password, dbname, port, sslmode,
 	)
 
 	var err error
